@@ -18,7 +18,6 @@ classdef extraction_model < handle
         %% CONSTRUCTOR
         function model = extraction_model()
             diary off;
-            model.pool=gcp();
             model.sets=[];
             model.paths=[];
             model.contest=[];

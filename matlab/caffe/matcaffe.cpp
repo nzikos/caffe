@@ -625,7 +625,7 @@ static void is_initialized(MEX_ARGS) {
 //--------API CALL: 'training_iter'--------------------------------------------
 //PURPOSE:
 //	PERFORM ONE TRAINING ITERATION:
-//		UPLOAD INPUTS -> FORWARD -> BACKWARD -> GETS GRADS PRODUCED
+//		UPLOAD INPUTS -> FORWARD -> BACKWARD -> GET PRODUCED GRADS
 //ARGUMENTS:
 //	CELL OF DATA, ONE CELL PER INPUT (e.g. DATA+LABELS = CELL(2,1));
 //RETURNS:

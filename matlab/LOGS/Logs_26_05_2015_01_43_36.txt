@@ -1,0 +1,13 @@
+{Error using <a href="matlab:helpUtils.errorDocCallback('handle_dir', '/home/alexis/caffe/matlab/utils/handle_dir.m', 19)" style="font-weight:bold">handle_dir</a> (<a href="matlab: opentoline('/home/alexis/caffe/matlab/utils/handle_dir.m',19,0)">line 19</a>)
+Directory /media/alexis/SSD/XML/training does not exist
+
+Error in <a href="matlab:helpUtils.errorDocCallback('PATHS', '/home/alexis/caffe/matlab/model/classes/PATHS.m', 28)" style="font-weight:bold">PATHS</a> (<a href="matlab: opentoline('/home/alexis/caffe/matlab/model/classes/PATHS.m',28,0)">line 28</a>)
+                        handle_dir(dirc,'throw error');
+
+Error in <a href="matlab:helpUtils.errorDocCallback('extraction_model/set_paths', '/home/alexis/caffe/matlab/model/classes/extraction_model.m', 36)" style="font-weight:bold">extraction_model/set_paths</a> (<a href="matlab: opentoline('/home/alexis/caffe/matlab/model/classes/extraction_model.m',36,0)">line 36</a>)
+            model.paths       = PATHS(model.sets,meta,imdb,cache);
+
+Error in <a href="matlab:helpUtils.errorDocCallback('test_build', '/home/alexis/caffe/matlab/test_build.m', 11)" style="font-weight:bold">test_build</a> (<a href="matlab: opentoline('/home/alexis/caffe/matlab/test_build.m',11,0)">line 11</a>)
+model.set_paths(meta,imdb,cache);
+} 
+test_build

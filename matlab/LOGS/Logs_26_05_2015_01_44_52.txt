@@ -1,0 +1,203 @@
+model.sets = x.sets;
+model.objects.dims = x.objects.dims
+
+model = 
+
+  <a href="matlab:helpPopup extraction_model" style="font-weight:bold">extraction_model</a> with properties:
+
+        pool: [1x1 parallel.Pool]
+        sets: [1x1 SETS]
+       paths: []
+     contest: []
+    metadata: [1x1 METADATA]
+     objects: [1x1 OBJECTS]
+        LOGS: '/home/alexis/caffe/matlab/LOGS/Logs_26_05_2015_01_44_52.txt'
+
+model.objects.data.training=x.objects.data.training(1:5)
+
+model = 
+
+  <a href="matlab:helpPopup extraction_model" style="font-weight:bold">extraction_model</a> with properties:
+
+        pool: [1x1 parallel.Pool]
+        sets: [1x1 SETS]
+       paths: []
+     contest: []
+    metadata: [1x1 METADATA]
+     objects: [1x1 OBJECTS]
+        LOGS: '/home/alexis/caffe/matlab/LOGS/Logs_26_05_2015_01_44_52.txt'
+
+model.objects.data.validation=x.objects.data.validation(1:5);
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Error using <a href="matlab:helpUtils.errorDocCallback('caffe')" style="font-weight:bold">caffe</a>
+MatCaffe input size does not match the input size of the network
+
+Error in <a href="matlab:helpUtils.errorDocCallback('CAFFE>@(batch)caffe(''training_iter'',batch)', '/home/alexis/caffe/matlab/network/classes/CAFFE.m', 35)" style="font-weight:bold">CAFFE>@(batch)caffe('training_iter',batch)</a> (<a href="matlab: opentoline('/home/alexis/caffe/matlab/network/classes/CAFFE.m',35,0)">line 35</a>)
+            obj.action.training_iter    = @(batch)caffe('training_iter',batch);
+
+Error in <a href="matlab:helpUtils.errorDocCallback('network/start_train', '/home/alexis/caffe/matlab/network/classes/network.m', 70)" style="font-weight:bold">network/start_train</a> (<a href="matlab: opentoline('/home/alexis/caffe/matlab/network/classes/network.m',70,0)">line 70</a>)
+                        this_grads= net.caffe.action.training_iter(batch);
+
+Error in <a href="matlab:helpUtils.errorDocCallback('test_build', '/home/alexis/caffe/matlab/test_build.m', 49)" style="font-weight:bold">test_build</a> (<a href="matlab: opentoline('/home/alexis/caffe/matlab/test_build.m',49,0)">line 49</a>)
+net.start_train();
+} 
+new_net=network(model);
+new_net.caffe.set_use_gpu(1);
+save model
+test_build
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep in; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbquit; end
+test_build
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+[26-05-2015 01:51:36] iter: 1/408 | epoch 0/200 | mse: 0.800000786781311
+[26-05-2015 01:51:39] iter: 2/408 | epoch 0/200 | mse: 0.799281477928162
+[26-05-2015 01:51:43] iter: 3/408 | epoch 0/200 | mse: 0.797914922237396
+[26-05-2015 01:51:46] iter: 4/408 | epoch 0/200 | mse: 0.796356081962585
+[26-05-2015 01:51:49] iter: 5/408 | epoch 0/200 | mse: 0.793910562992096
+[26-05-2015 01:51:53] iter: 6/408 | epoch 0/200 | mse: 0.791605889797211
+[26-05-2015 01:51:56] iter: 7/408 | epoch 0/200 | mse: 0.789276838302612
+[26-05-2015 01:51:59] iter: 8/408 | epoch 0/200 | mse: 0.786399364471436
+[26-05-2015 01:52:03] iter: 9/408 | epoch 0/200 | mse: 0.782435595989227
+[26-05-2015 01:52:06] iter: 10/408 | epoch 0/200 | mse: 0.779916167259216
+[26-05-2015 01:52:09] iter: 11/408 | epoch 0/200 | mse: 0.777013957500458
+[26-05-2015 01:52:13] iter: 12/408 | epoch 0/200 | mse: 0.772954344749451
+[26-05-2015 01:52:16] iter: 13/408 | epoch 0/200 | mse: 0.770575284957886
+[26-05-2015 01:52:19] iter: 14/408 | epoch 0/200 | mse: 0.767531871795654
+[26-05-2015 01:52:22] iter: 15/408 | epoch 0/200 | mse: 0.763021647930145
+[26-05-2015 01:52:26] iter: 16/408 | epoch 0/200 | mse: 0.759253084659576
+[26-05-2015 01:52:29] iter: 17/408 | epoch 0/200 | mse: 0.754472851753235
+[26-05-2015 01:52:32] iter: 18/408 | epoch 0/200 | mse: 0.751236796379089
+[26-05-2015 01:52:36] iter: 19/408 | epoch 0/200 | mse: 0.749115347862244
+[26-05-2015 01:52:39] iter: 20/408 | epoch 0/200 | mse: 0.743428707122803
+[26-05-2015 01:52:43] iter: 21/408 | epoch 0/200 | mse: 0.738238453865051
+[26-05-2015 01:52:46] iter: 22/408 | epoch 0/200 | mse: 0.738087415695190
+[26-05-2015 01:52:49] iter: 23/408 | epoch 0/200 | mse: 0.732062578201294
+[26-05-2015 01:52:53] iter: 24/408 | epoch 0/200 | mse: 0.734320163726807
+[26-05-2015 01:52:56] iter: 25/408 | epoch 0/200 | mse: 0.728886842727661
+[26-05-2015 01:52:59] iter: 26/408 | epoch 0/200 | mse: 0.726311683654785
+[26-05-2015 01:53:03] iter: 27/408 | epoch 0/200 | mse: 0.722908854484558
+[26-05-2015 01:53:06] iter: 28/408 | epoch 0/200 | mse: 0.715132951736450
+[26-05-2015 01:53:09] iter: 29/408 | epoch 0/200 | mse: 0.717416286468506
+[26-05-2015 01:53:13] iter: 30/408 | epoch 0/200 | mse: 0.711321473121643
+[26-05-2015 01:53:16] iter: 31/408 | epoch 0/200 | mse: 0.708914279937744
+[26-05-2015 01:53:20] iter: 32/408 | epoch 0/200 | mse: 0.701564311981201
+[26-05-2015 01:53:23] iter: 33/408 | epoch 0/200 | mse: 0.702688932418823
+[26-05-2015 01:53:26] iter: 34/408 | epoch 0/200 | mse: 0.691575527191162
+[26-05-2015 01:53:30] iter: 35/408 | epoch 0/200 | mse: 0.692718923091888
+[26-05-2015 01:53:33] iter: 36/408 | epoch 0/200 | mse: 0.696819663047791
+[26-05-2015 01:53:37] iter: 37/408 | epoch 0/200 | mse: 0.690787911415100
+[26-05-2015 01:53:40] iter: 38/408 | epoch 0/200 | mse: 0.684685528278351
+[26-05-2015 01:53:44] iter: 39/408 | epoch 0/200 | mse: 0.686308622360229
+[26-05-2015 01:53:47] iter: 40/408 | epoch 0/200 | mse: 0.679345905780792
+[26-05-2015 01:53:50] iter: 41/408 | epoch 0/200 | mse: 0.687596976757050
+[26-05-2015 01:53:54] iter: 42/408 | epoch 0/200 | mse: 0.671761929988861
+[26-05-2015 01:53:57] iter: 43/408 | epoch 0/200 | mse: 0.659865975379944
+[26-05-2015 01:54:01] iter: 44/408 | epoch 0/200 | mse: 0.669065475463867
+[26-05-2015 01:54:04] iter: 45/408 | epoch 0/200 | mse: 0.657234549522400
+[26-05-2015 01:54:08] iter: 46/408 | epoch 0/200 | mse: 0.651213884353638
+[26-05-2015 01:54:11] iter: 47/408 | epoch 0/200 | mse: 0.655623674392700
+[26-05-2015 01:54:14] iter: 48/408 | epoch 0/200 | mse: 0.652201652526855
+[26-05-2015 01:54:18] iter: 49/408 | epoch 0/200 | mse: 0.658198475837708
+[26-05-2015 01:54:21] iter: 50/408 | epoch 0/200 | mse: 0.653063178062439
+[26-05-2015 01:54:25] iter: 51/408 | epoch 0/200 | mse: 0.639923453330994
+[26-05-2015 01:54:28] iter: 52/408 | epoch 0/200 | mse: 0.639110267162323
+[26-05-2015 01:54:32] iter: 53/408 | epoch 0/200 | mse: 0.651808261871338
+[26-05-2015 01:54:35] iter: 54/408 | epoch 0/200 | mse: 0.644566178321838
+[26-05-2015 01:54:38] iter: 55/408 | epoch 0/200 | mse: 0.641137599945068
+[26-05-2015 01:54:42] iter: 56/408 | epoch 0/200 | mse: 0.621322393417358
+[26-05-2015 01:54:45] iter: 57/408 | epoch 0/200 | mse: 0.630158841609955
+[26-05-2015 01:54:49] iter: 58/408 | epoch 0/200 | mse: 0.627668142318726
+[26-05-2015 01:54:52] iter: 59/408 | epoch 0/200 | mse: 0.636438965797424
+[26-05-2015 01:54:55] iter: 60/408 | epoch 0/200 | mse: 0.621799409389496
+[26-05-2015 01:54:59] iter: 61/408 | epoch 0/200 | mse: 0.625254392623901
+[26-05-2015 01:55:02] iter: 62/408 | epoch 0/200 | mse: 0.632136821746826
+[26-05-2015 01:55:06] iter: 63/408 | epoch 0/200 | mse: 0.632232248783112
+[26-05-2015 01:55:09] iter: 64/408 | epoch 0/200 | mse: 0.609412670135498
+[26-05-2015 01:55:12] iter: 65/408 | epoch 0/200 | mse: 0.614995241165161
+[26-05-2015 01:55:16] iter: 66/408 | epoch 0/200 | mse: 0.606407523155212
+[26-05-2015 01:55:19] iter: 67/408 | epoch 0/200 | mse: 0.616839706897736
+[26-05-2015 01:55:23] iter: 68/408 | epoch 0/200 | mse: 0.602837204933167
+[26-05-2015 01:55:26] iter: 69/408 | epoch 0/200 | mse: 0.614452958106995
+[26-05-2015 01:55:29] iter: 70/408 | epoch 0/200 | mse: 0.619857430458069
+[26-05-2015 01:55:33] iter: 71/408 | epoch 0/200 | mse: 0.603907942771912
+[26-05-2015 01:55:36] iter: 72/408 | epoch 0/200 | mse: 0.613909721374512
+[26-05-2015 01:55:39] iter: 73/408 | epoch 0/200 | mse: 0.612615883350372
+[26-05-2015 01:55:43] iter: 74/408 | epoch 0/200 | mse: 0.612924337387085
+[26-05-2015 01:55:46] iter: 75/408 | epoch 0/200 | mse: 0.597910225391388
+[26-05-2015 01:55:50] iter: 76/408 | epoch 0/200 | mse: 0.598512887954712
+[26-05-2015 01:55:53] iter: 77/408 | epoch 0/200 | mse: 0.606538474559784
+[26-05-2015 01:55:56] iter: 78/408 | epoch 0/200 | mse: 0.603155612945557
+[26-05-2015 01:56:00] iter: 79/408 | epoch 0/200 | mse: 0.607620716094971
+[26-05-2015 01:56:03] iter: 80/408 | epoch 0/200 | mse: 0.598281741142273
+[26-05-2015 01:56:06] iter: 81/408 | epoch 0/200 | mse: 0.598712563514709
+[26-05-2015 01:56:10] iter: 82/408 | epoch 0/200 | mse: 0.602285027503967
+[26-05-2015 01:56:13] iter: 83/408 | epoch 0/200 | mse: 0.606405675411224
+[26-05-2015 01:56:17] iter: 84/408 | epoch 0/200 | mse: 0.636035680770874
+[26-05-2015 01:56:20] iter: 85/408 | epoch 0/200 | mse: 0.605316162109375
+[26-05-2015 01:56:23] iter: 86/408 | epoch 0/200 | mse: 0.595848083496094
+[26-05-2015 01:56:27] iter: 87/408 | epoch 0/200 | mse: 0.601065814495087
+[26-05-2015 01:56:30] iter: 88/408 | epoch 0/200 | mse: 0.606958031654358
+[26-05-2015 01:56:33] iter: 89/408 | epoch 0/200 | mse: 0.580615699291229
+[26-05-2015 01:56:37] iter: 90/408 | epoch 0/200 | mse: 0.583144724369049
+[26-05-2015 01:56:40] iter: 91/408 | epoch 0/200 | mse: 0.609953224658966
+[26-05-2015 01:56:44] iter: 92/408 | epoch 0/200 | mse: 0.599726855754852
+[26-05-2015 01:56:47] iter: 93/408 | epoch 0/200 | mse: 0.594696640968323
+[26-05-2015 01:56:50] iter: 94/408 | epoch 0/200 | mse: 0.619174003601074
+[26-05-2015 01:56:54] iter: 95/408 | epoch 0/200 | mse: 0.593422532081604
+[26-05-2015 01:56:57] iter: 96/408 | epoch 0/200 | mse: 0.609702348709106
+[26-05-2015 01:57:01] iter: 97/408 | epoch 0/200 | mse: 0.580153465270996
+[26-05-2015 01:57:04] iter: 98/408 | epoch 0/200 | mse: 0.589897632598877
+[26-05-2015 01:57:07] iter: 99/408 | epoch 0/200 | mse: 0.627836763858795
+[26-05-2015 01:57:11] iter: 100/408 | epoch 0/200 | mse: 0.602370500564575
+[26-05-2015 01:57:14] iter: 101/408 | epoch 0/200 | mse: 0.607215523719788
+[26-05-2015 01:57:17] iter: 102/408 | epoch 0/200 | mse: 0.606661796569824
+[26-05-2015 01:57:21] iter: 103/408 | epoch 0/200 | mse: 0.599705219268799
+[26-05-2015 01:57:24] iter: 104/408 | epoch 0/200 | mse: 0.599227190017700
+[26-05-2015 01:57:28] iter: 105/408 | epoch 0/200 | mse: 0.585738420486450
+[26-05-2015 01:57:31] iter: 106/408 | epoch 0/200 | mse: 0.613002657890320
+[26-05-2015 01:57:34] iter: 107/408 | epoch 0/200 | mse: 0.625069022178650
+[26-05-2015 01:57:38] iter: 108/408 | epoch 0/200 | mse: 0.608871936798096
+[26-05-2015 01:57:41] iter: 109/408 | epoch 0/200 | mse: 0.602739334106445
+[26-05-2015 01:57:45] iter: 110/408 | epoch 0/200 | mse: 0.593709886074066
+[26-05-2015 01:57:48] iter: 111/408 | epoch 0/200 | mse: 0.581862628459930
+[26-05-2015 01:57:51] iter: 112/408 | epoch 0/200 | mse: 0.617575645446777
+[26-05-2015 01:57:55] iter: 113/408 | epoch 0/200 | mse: 0.580571055412292
+[26-05-2015 01:57:58] iter: 114/408 | epoch 0/200 | mse: 0.611406803131104
+[26-05-2015 01:58:02] iter: 115/408 | epoch 0/200 | mse: 0.597941756248474
+[26-05-2015 01:58:05] iter: 116/408 | epoch 0/200 | mse: 0.640493810176849

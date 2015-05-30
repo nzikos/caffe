@@ -20,8 +20,8 @@ classdef TRAIN < handle
         %% INIT
         function train = TRAIN(arg_caffe,arg_objects)
             train.caffe        = arg_caffe;
-            train.objects      = arg_objects;
-            train.objects_pool = vectorize_objects_fpaths(train.objects);
+            train.objects      = vectorize_objects_fpaths(arg_objects);
+            train.objects_pool = [];
             train.error(1)     = 1;
         end
         %% SETTERS
@@ -77,10 +77,9 @@ classdef TRAIN < handle
 
             if isnan(train.error(end))
                 thats_very_bad=1; %insert breakpoint for debug
-            end
-            
+            end          
             figure(train.training_fig);
-            plot(train.error);
+            plot(train.error);            
         end
     end
     

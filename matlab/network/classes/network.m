@@ -44,7 +44,7 @@ classdef network < handle
         function net = set_batches_per_iter(net,batches_per_iter)
 
             net.train.set_batches_per_iter(batches_per_iter);
-            net.iters_per_epoch  = floor(length(net.train.objects_pool)/(batches_per_iter*net.caffe.batch_size));
+            net.iters_per_epoch  = floor(length(net.train.objects)/(batches_per_iter*net.caffe.batch_size));
         end
         
         function net = set_validations_per_epoch(net,vals_per_epoch)

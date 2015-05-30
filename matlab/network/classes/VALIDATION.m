@@ -1,4 +1,4 @@
-classdef VALIDATION
+classdef VALIDATION < handle
     %VALIDATION Class used to store validation parameters such as errors,
     %target errors, times validation performed
     
@@ -53,8 +53,7 @@ APP_LOG('info',0,'validation error: %1.15f accuracy: %f%%',curr_mse/loops,(curr_
             end
 	        APP_LOG('info',0,'validation error: %1.15f accuracy: %f%%',val.error(end),val.accuracy(end)*100);
             figure(val.val_fig);
-            plot(val.error,':bo');
-            plot(val.accuracy,':r*');
+            plot(1:length(val.error),val.error,':bo',1:length(val.error),val.accuracy,':r*');
         end
 
         end

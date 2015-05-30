@@ -8,7 +8,7 @@ function [gaborFiltersBank] = gabor2D(kernel)
         gaborFiltersBank(:,:,i,1:8) = gaborFilterBank2D(1,8,kernel,kernel,0,0.5,0.6,-(pi/2));
         gaborFiltersBank(:,:,i,9:16) = gaborFilterBank2D(1,8,kernel,kernel,0,1,0.6,0);
         gaborFiltersBank(:,:,i,17:24) = gaborFilterBank2D(1,8,kernel,kernel,0,1,0.5,0);
-        gaborFiltersBank(:,:,i,25:32) = gaborFilterBank2D(1,8,kernel,kernel,0,1,0.3,0);        
+        gaborFiltersBank(:,:,i,25:32) = gaborFilterBank2D(1,8,kernel,kernel,0,1,0.3,0);  
     end
 end
 

@@ -12,8 +12,8 @@ classdef TRAIN < handle
         caffe        =[];
         
         batches_per_iter =[];
-        
-        training_fig = figure('name','training error');
+        training_fig     = figure('name','training error');
+        const_layers     =[];
     end
     
     methods
@@ -37,6 +37,11 @@ classdef TRAIN < handle
         function set_batches_per_iter(train,value)
             train.batches_per_iter=value;
         end
+        
+        function set_constant_layers(train,value)
+            train.const_layers = value;
+        end
+        
         %% FUNCTIONS
         function do_train(train)
                 %refill
@@ -49,10 +54,10 @@ classdef TRAIN < handle
                 for j=1:train.batches_per_iter
                     [batch,train.objects_pool]=create_random_batch(train.objects_pool,...
                                                                    train.caffe.batch_size);
-                    this_grads =train.caffe.action.training_iter(batch);
+                    this_grads =train.caffe.action.training_iter(batch(1:2));
                     scores     =train.caffe.get.output();
                     
-                    this_mse   =mean(sum((batch{2}-scores{1}).^2,3),4);              
+                    this_mse   =mean(sum((batch{3}-scores{1}).^2,3),4);              
                     current_mse = current_mse + this_mse;
                     %RETRIEVE AND SUM NEW WEIGHT-BIAS DIFFS
                     for k=1:train.caffe.n_layers
@@ -69,15 +74,12 @@ classdef TRAIN < handle
                 end
                 train.handle_error(current_mse);
                 %% UPDATE WEIGHTS
-                train.method.update_weights(grads);
+                train.method.update_weights(train.const_layers,grads);
         end
         
         function handle_error(train,current_mse)
             train.error(end+1) = current_mse/train.batches_per_iter;
 
-            if isnan(train.error(end))
-                thats_very_bad=1; %insert breakpoint for debug
-            end          
             figure(train.training_fig);
             plot(train.error);            
         end

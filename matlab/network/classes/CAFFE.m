@@ -12,14 +12,16 @@ classdef CAFFE < handle
         batch_size = [];
         zero_struct= [];
     end
-    
+    properties (SetAccess = public)
+        weights    = [];
+    end
     methods
         %% INIT 
         function obj = CAFFE()
             %CAFFE SETTERS HANDLERS
             obj.set.phase.train         = @()caffe('set_phase','train');
             obj.set.phase.test          = @()caffe('set_phase','test');
-            obj.set.weights             = @(w)caffe('set_weights',w);
+            obj.set.weights             = @()caffe('set_weights',obj.weights);
             obj.set.input               = @(i)caffe('upload_input',i);
             obj.set.device              = @(id)caffe('set_device',id);
             %CAFFE GETTERS HANDLERS
@@ -63,10 +65,11 @@ classdef CAFFE < handle
         
         function set_layer(obj,layer_id,init_weights,init_bias)
             if obj.get.is_initialized()
-                weights  = obj.get.weights();
-                weights(layer_id).weights{1}=single(init_weights);
-                weights(layer_id).weights{2}=single(repmat(init_bias,size(weights(layer_id).weights{2})));
-                obj.set.weights(weights);
+                obj.weights  = obj.get.weights();
+                obj.weights(layer_id).weights{1}=single(init_weights);
+                obj.weights(layer_id).weights{2}=single(repmat(init_bias,size(obj.weights(layer_id).weights{2})));
+
+                obj.set.weights();
             else
                 APP_LOG('last_error',0,'Initialize caffe before initiallizing a layer');
             end
@@ -75,11 +78,11 @@ classdef CAFFE < handle
         %% FUNCTIONS
         function init(obj)
             matcaffe_init(obj.use_gpu,obj.prototxt);
-            weights  = obj.get.weights();
-            obj.n_layers = length(weights);
+            obj.weights  = obj.get.weights();
+            obj.n_layers = length(obj.weights);
             for i=1:obj.n_layers
                 for j=1:2
-                    obj.zero_struct(i).weights{j}=zeros(size(weights(i).weights{j}));
+                    obj.zero_struct(i).weights{j}=zeros(size(obj.weights(i).weights{j}));
                 end
             end
         end

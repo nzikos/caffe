@@ -8,7 +8,6 @@ classdef network < handle
         train                =[];
         validation           =[];
         sets                 =[];
-        classes              =[];
 
         iter                 =[];
         epoch                =[];
@@ -35,7 +34,6 @@ classdef network < handle
                 net.epoch              = 0;
                 
                 net.input_dims         = extraction_model.objects.dims;
-                net.classes            = {extraction_model.objects.data.(set{1}).name}';
             else
                 APP_LOG('error_last',0,'Expected class "extraction_model"');
             end
@@ -60,24 +58,27 @@ classdef network < handle
         end                
         %% TRAIN/VAL
         function net = start(net)
+            APP_LOG('header',0,'Training');
+            net.caffe.set.phase.train();
             while (net.epoch < net.max_epochs) || (net.validation.error(end) > net.target)
                 
-                APP_LOG('header',0,'Training');
-                net.caffe.set.phase.train();
-                for i=1:net.iters_per_val
-                    net.train.do_train();
-                    net.iter=net.iter+1;
-                    if net.iter>net.iters_per_epoch
-                        net.iter=0;
-                        net.epoch=net.epoch+1;
-                    end
-                    APP_LOG('info',0,'iter: %d/%d | epoch %d/%d | error: %1.15f',net.iter,net.iters_per_epoch,net.epoch,net.max_epochs,net.train.error(end));
+                net.train.do_train();
+                net.iter=net.iter+1;
+
+                APP_LOG('info',0,'iter: %d/%d | epoch %d/%d | error: %1.15f',net.iter,net.iters_per_epoch,net.epoch,net.max_epochs,net.train.error(end));
+
+                if ~mod(net.iter,net.iters_per_val) || net.iter==net.iters_per_epoch
+                    APP_LOG('header',0,'Validating');
+                    net.caffe.set.phase.test();
+                    net.validation.do_validation();                    
+                    APP_LOG('header',0,'Training');
+                    net.caffe.set.phase.train();                    
                 end
-                
-                APP_LOG('header',0,'Validating');
-                net.caffe.set.phase.test();
-                net.validation.do_validation();
-                
+
+                if net.iter>=net.iters_per_epoch
+                    net.iter=0;
+                    net.epoch=net.epoch+1;
+                end
             end
         end
     end

@@ -11,6 +11,6 @@ end
 function out = put_obj_on_batch(out,j,path)
         tmp = load(path);
         out{1,1}(:,:,:,j)=single(tmp.object.data)/255;
-        out{2,1}(1,1,:,j)=single(tmp.object.labels.vector);
-        out{3,1}(1,1,1,j)=single(tmp.object.labels.uid);
+        out{2,1}(1,1,1,j)=single(tmp.object.labels.uid);
+        out{3,1}(1,1,:,j)=single(tmp.object.labels.vector);        
 end

@@ -30,12 +30,12 @@ classdef VALIDATION < handle
                     
                     batch = create_simple_batch(val.objects(pos:end),val.caffe.batch_size);
 
-                    val.caffe.set.input(batch);
+                    val.caffe.set.input(batch(1:2));
                     val.caffe.action.forward();
                     result=val.caffe.get.output();
                     
                     curr_accuracy = curr_accuracy + result{1};
-                    this_mse      = mean(sum((batch{2}-result{2}).^2,3),4);
+                    this_mse      = mean(sum((batch{3}-result{2}).^2,3),4);
                     curr_mse      = curr_mse + this_mse;
                     loops         = loops+1;
                     pos           = pos+val.caffe.batch_size;
@@ -48,10 +48,7 @@ APP_LOG('info',0,'validation error: %1.15f accuracy: %f%%',curr_mse/loops,(curr_
             val.error(end+1)        = curr_mse;
             val.accuracy(end+1)     = curr_accuracy;
 
-            if isnan(val.error(end))
-                thats_very_bad=1; %insert breakpoint for debug
-            end
-	        APP_LOG('info',0,'validation error: %1.15f accuracy: %f%%',val.error(end),val.accuracy(end)*100);
+            APP_LOG('info',0,'validation error: %1.15f accuracy: %f%%',val.error(end),val.accuracy(end)*100);
             figure(val.val_fig);
             plot(1:length(val.error),val.error,':bo',1:length(val.error),val.accuracy,':r*');
         end

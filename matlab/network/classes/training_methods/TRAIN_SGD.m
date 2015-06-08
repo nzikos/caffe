@@ -59,13 +59,18 @@ classdef TRAIN_SGD < handle
             end
             
             wcoeff= (1-obj.lr*obj.wd);
-            for i=const_layers:obj.caffe.n_layers
-                for j=1:2
-                    obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - obj.lr * grads(i).weights{j};
+            for i=1:obj.caffe.n_layers
+                
+                if isempty(find(const_layers==i))
+                    for j=1:2
+                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - obj.lr * grads(i).weights{j};
+                    end
+                
+                    for j=1:2
+                        obj.caffe.weights(i).weights{j}=wcoeff*obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
+                    end
                 end
-                for j=1:2
-                    obj.caffe.weights(i).weights{j}=wcoeff*obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
-                end
+                
             end
             
             obj.caffe.set.weights();

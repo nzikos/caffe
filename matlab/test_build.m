@@ -52,6 +52,6 @@ net.set_validations_per_epoch(2);
 net.set_max_epochs(100);            %STOP parameter - What is the maximum size of epochs to trigger a stop
 net.set_target(0.25);               %STOP parameter - What is the minimum validation error to trigger a stop
 
-net.train.set_method('sgd',{0.0282842,0.9,0.1,30*net.iters_per_epoch,0.0005});
+net.train.set_method('sgd',{0.0282842,0.9,0.1,30*net.iters_per_epoch,0.005});
 net.train.set_constant_layers(1);
 net.start();

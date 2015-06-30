@@ -1,14 +1,19 @@
 name: "dummy"
 input: "data"
-input_dim: 256
+input_dim: 128
 input_dim: 3
 input_dim: 224
 input_dim: 224
 input: "declabel"
-input_dim: 256
+input_dim: 128
 input_dim: 1
 input_dim: 1
 input_dim: 1
+#input: "binlabel"
+#input_dim: 64
+#input_dim: 200
+#input_dim: 1
+#input_dim: 1
 # --------------------------------layer 1----------------------------------
 layers {
   name: "conv1"
@@ -38,30 +43,29 @@ layers {
   bottom: "conv1"
   top: "conv1"
 }
-#layers {
-#    name: "norm1"
-#    type: LRN
-#	bottom: "conv1"
-#	top: "norm1"
-#	lrn_param {
-#       local_size: 3
-#        alpha: 0.00005
-#        beta: 0.75
-#        norm_region: WITHIN_CHANNEL
-#	}
-#}
+layers {
+    name: "norm1"
+    type: LRN
+	bottom: "conv1"
+	top: "norm1"
+	lrn_param {
+       local_size: 3
+       alpha: 0.00005
+        beta: 0.75
+        norm_region: WITHIN_CHANNEL
+	}
+}
 layers {
   name: "pool1"
   type: POOLING
-  bottom: "conv1"
+  bottom: "norm1"
   top: "pool1"
   pooling_param {
     pool: MAX
-    kernel_size: 7
+    kernel_size: 3
     stride: 2
   }
 }
-
 # --------------------------------layer 2----------------------------------
 layers {
     name: "conv2"
@@ -71,7 +75,7 @@ layers {
 	blobs_lr: 1
 	blobs_lr: 2
 	convolution_param {
-        num_output: 128
+        num_output: 256
         pad: 0
         kernel_size: 5
         stride: 2
@@ -91,22 +95,22 @@ layers {
   bottom: "conv2"
   top: "conv2"
 }
-#layers {
-#    name: "norm2"
-#    type: LRN
-#	bottom: "conv2"
-#	top: "norm2"
-#	lrn_param {
-#       local_size: 3
-#        alpha: 0.00005
-#        beta: 0.75
-#        norm_region: WITHIN_CHANNEL
-#	}
-#}
+layers {
+    name: "norm2"
+    type: LRN
+	bottom: "conv2"
+	top: "norm2"
+	lrn_param {
+       local_size: 3
+        alpha: 0.00005
+        beta: 0.75
+        norm_region: WITHIN_CHANNEL
+	}
+}
 layers {
     name: "pool2"
     type: POOLING
-	bottom: "conv2"
+	bottom: "norm2"
 	top: "pool2"
 	pooling_param {
         pool: MAX
@@ -114,7 +118,6 @@ layers {
         stride: 2
 	}
 }
-
 # --------------------------------layer 3----------------------------------
 layers {
     name: "conv3"
@@ -124,7 +127,7 @@ layers {
     blobs_lr: 1
     blobs_lr: 2
     convolution_param {
-        num_output: 192
+        num_output: 384
         pad: 1
         kernel_size: 3
         stride: 1
@@ -154,7 +157,7 @@ layers {
 	blobs_lr: 1
 	blobs_lr: 2
 	convolution_param {
-        num_output: 256
+        num_output: 384
         kernel_size: 3
         pad: 1
         stride: 1
@@ -184,7 +187,7 @@ layers {
 	blobs_lr: 1
 	blobs_lr: 2
 	convolution_param {
-        num_output: 128
+        num_output: 256
         kernel_size: 3
         pad: 1
         stride: 1
@@ -215,7 +218,7 @@ layers {
     blobs_lr: 1
     blobs_lr: 2
     inner_product_param {
-        num_output: 512
+        num_output: 2048
         weight_filler {
             type: "gaussian"
             std: 0.01
@@ -250,7 +253,7 @@ layers {
     blobs_lr: 1
     blobs_lr: 2
     inner_product_param {
-        num_output: 512
+        num_output: 1024
         weight_filler {
             type: "gaussian"
             std: 0.01

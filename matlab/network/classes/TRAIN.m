@@ -12,7 +12,7 @@ classdef TRAIN < handle
         caffe        =[];
         
         batches_per_iter =[];
-        training_fig     = figure('name','training error');
+        training_fig     =figure('name','training error');
         const_layers     =[];
     end
     
@@ -23,12 +23,15 @@ classdef TRAIN < handle
             train.objects      = vectorize_objects_fpaths(arg_objects);
             train.objects_pool = [];
             train.error(1)     = 1;
+            
+            %figure initialization
+            %set(train.training_fig,'MenuBar','none');
         end
         %% SETTERS
-        function set_method(train,method,options)
+        function set_method(train,method)
             switch(method)
                 case 'sgd'
-                    train.method = TRAIN_SGD(train.caffe,options);
+                    train.method = TRAIN_SGD(train.caffe);
                 otherwise
                     APP_LOG('error_last',0,'Training method %s not supported',method);
             end            
@@ -44,30 +47,32 @@ classdef TRAIN < handle
         
         %% FUNCTIONS
         function do_train(train)
+                rcaffe = train.caffe;            
                 %refill
-                if (length(train.objects_pool)<train.batches_per_iter*train.caffe.batch_size)
+                if (length(train.objects_pool)<train.batches_per_iter*rcaffe.batch_factory.batch_size)
                     train.objects_pool =train.objects;
                 end
 
-                grads       =train.caffe.zero_struct;
+                grads       =rcaffe.zero_struct;
                 current_mse =0;
                 for j=1:train.batches_per_iter
-                    [batch,train.objects_pool]=create_random_batch(train.objects_pool,...
-                                                                   train.caffe.batch_size);
-                    this_grads =train.caffe.action.training_iter(batch(1:2));
-                    scores     =train.caffe.get.output();
                     
+                    [batch,train.objects_pool]=rcaffe.batch_factory.create_training_batch(train.objects_pool);
+                    
+                    this_grads =rcaffe.action.training_iter(batch(1:2));
+                    scores     =rcaffe.get.output();
                     this_mse   =mean(sum((batch{3}-scores{1}).^2,3),4);              
+                    %this_mse   =scores{2}; % <-- loss layer output                    
                     current_mse = current_mse + this_mse;
                     %RETRIEVE AND SUM NEW WEIGHT-BIAS DIFFS
-                    for k=1:train.caffe.n_layers
+                    for k=1:rcaffe.n_layers
                         for l=1:2
                             grads(k).weights{l}=grads(k).weights{l}+this_grads(k).weights{l};
                         end                    
                     end
                 end
                 %% Get mean of grads
-                for j=1:train.caffe.n_layers
+                for j=1:rcaffe.n_layers
                     for k=1:2
                         grads(j).weights{k}=grads(j).weights{k}/train.batches_per_iter;
                     end

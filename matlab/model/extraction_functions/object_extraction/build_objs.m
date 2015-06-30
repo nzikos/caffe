@@ -56,8 +56,10 @@ for j=1:length(classes)
 
     % Get the labels
     labels = object_labels(class_names_map,classes,j); 
+    
     % Prepare class print output
     out = sprintf('%4s%22s[%9s]',num2str(j),class_names_map(classes{j}),classes{j});
+    
     % For each dataset
 	for i=1:length(set)
 
@@ -68,14 +70,19 @@ for j=1:length(classes)
         %Get only the objects that belong in j-th class of i-th set
         shrinked_meta = get_shrinked_meta(meta.data.(set{i}),...
                                           meta.rmap.(set{i}),...
-                                          labels.contestID);        
+                                          labels.contestID);     
+                                      
+        %Get dimensions of extracted object (dataset relative)
+        this_dims = dims.(set{i});
+        
         %EXTRACT OBJECTS
         par_objs_fpaths = {};
         parfor k=1:length(shrinked_meta)
             par_objs_fpaths{k} = feval(extract_object,shrinked_meta(k)...
-                                                     ,dims...
+                                                     ,this_dims...
                                                      ,labels...
-                                                     ,appendTo);
+                                                     ,appendTo...
+                                                     );
         end
         
         %Serialize them
@@ -87,16 +94,19 @@ for j=1:length(classes)
                 counter = counter +1;
             end
         end
-        % Set on printing output the number of objects extracted for the
-        % i-th set
+        
+        %Set on printing output the number of objects extracted for the i-th set
         out = [out sprintf('%10s',num2str(length(ser_objs_paths)))];
+        
         %Append the paths
-        data.(set{i})(j).name = labels.name;
+        data.(set{i})(j).labels= labels;
         data.(set{i})(j).paths = ser_objs_paths;
+        
 	end
     
     %Print class info
     APP_LOG('info',0,'%s',out);
+    
 end
 end
 

@@ -1,17 +1,17 @@
 name: "dummy"
 input: "data"
-input_dim: 128
+input_dim: 96
 input_dim: 3
 input_dim: 224
 input_dim: 224
-input: "binlabel"
-input_dim: 128
-input_dim: 3
-input_dim: 1
-input_dim: 1
 input: "declabel"
-input_dim: 128
+input_dim: 96
 input_dim: 1
+input_dim: 1
+input_dim: 1
+input: "binlabel"
+input_dim: 96
+input_dim: 200
 input_dim: 1
 input_dim: 1
 # --------------------------------layer 1----------------------------------
@@ -25,11 +25,11 @@ layers {
   convolution_param {
     num_output: 32
     pad: 7
-    kernel_size: 15
-    stride: 2
+    kernel_size: 7
+    stride: 1
     weight_filler {
       type: "gaussian"
-      std: 0.0001
+      std: 0.01
     }
     bias_filler {
       type: "constant"
@@ -44,7 +44,7 @@ layers {
   top: "pool1"
   pooling_param {
     pool: MAX
-    kernel_size: 3
+    kernel_size: 2
     stride: 2
   }
 }
@@ -54,6 +54,7 @@ layers {
   bottom: "pool1"
   top: "pool1"
 }
+
 # --------------------------------layer 2----------------------------------
 layers {
     name: "conv2"
@@ -64,8 +65,8 @@ layers {
 	blobs_lr: 2
 	convolution_param {
         num_output: 96
-        pad: 2
-        kernel_size: 5
+        pad: 3
+        kernel_size: 7
         stride: 1
         weight_filler {
             type: "gaussian"
@@ -78,25 +79,13 @@ layers {
 	}
 }
 layers {
-    name: "norm2"
-    type: LRN
-	bottom: "conv2"
-	top: "norm2"
-	lrn_param {
-       local_size: 3
-        alpha: 0.00005
-        beta: 0.75
-        norm_region: WITHIN_CHANNEL
-	}
-}
-layers {
     name: "pool2"
     type: POOLING
-	bottom: "norm2"
+	bottom: "conv2"
 	top: "pool2"
 	pooling_param {
         pool: MAX
-        kernel_size: 3
+        kernel_size: 2
         stride: 2
 	}
 }
@@ -106,18 +95,31 @@ layers {
   bottom: "pool2"
   top: "pool2"
 }
+layers {
+    name: "norm2"
+    type: LRN
+	bottom: "pool2"
+	top: "norm2"
+	lrn_param {
+       local_size: 3
+        alpha: 0.00005
+        beta: 0.75
+        norm_region: WITHIN_CHANNEL
+	}
+}
+
 # --------------------------------layer 3----------------------------------
 layers {
     name: "conv3"
 	type: CONVOLUTION
-    bottom: "pool2"
+    bottom: "norm2"
     top: "conv3"
     blobs_lr: 1
     blobs_lr: 2
     convolution_param {
-        num_output: 256
-        pad: 2
-        kernel_size: 5
+        num_output: 128
+        pad: 3
+        kernel_size: 7
         stride: 1
         weight_filler {
             type: "gaussian"
@@ -136,16 +138,18 @@ layers {
   top: "pool3"
   pooling_param {
     pool: MAX
-    kernel_size: 3
+    kernel_size: 2
     stride: 2
   }
 }
+
 layers {
   name: "relu3"
   type: RELU
   bottom: "pool3"
   top: "pool3"
 }
+
 # --------------------------------layer 4----------------------------------
 layers {
     name: "conv4"
@@ -156,12 +160,12 @@ layers {
 	blobs_lr: 2
 	convolution_param {
         num_output: 128
-        kernel_size: 5
-        pad: 2
+        kernel_size: 7
+        pad: 3
         stride: 1
         weight_filler {
             type: "gaussian"
-            std: 0.001
+            std: 0.01
         }
         bias_filler {
             type: "constant"
@@ -176,7 +180,7 @@ layers {
   top: "pool4"
   pooling_param {
     pool: MAX
-    kernel_size: 3
+    kernel_size: 2
     stride: 2
   }
 }
@@ -186,6 +190,7 @@ layers {
   bottom: "pool4"
   top: "pool4"
 }
+
 # --------------------------------layer 5----------------------------------
 layers {
     name: "conv5"
@@ -201,7 +206,7 @@ layers {
         stride: 1
         weight_filler {
             type: "gaussian"
-            std: 0.001
+            std: 0.01
         }
         bias_filler {
             type: "constant"
@@ -216,7 +221,7 @@ layers {
   top: "pool5"
   pooling_param {
     pool: MAX
-    kernel_size: 3
+    kernel_size: 2
     stride: 2
   }
 }
@@ -238,7 +243,7 @@ layers {
         num_output: 1024
         weight_filler {
             type: "gaussian"
-            std: 0.001
+            std: 0.01
         }
         bias_filler {
             type: "constant"
@@ -270,10 +275,10 @@ layers {
     blobs_lr: 1
     blobs_lr: 2
     inner_product_param {
-        num_output: 128
+        num_output: 512
         weight_filler {
             type: "gaussian"
-            std: 0.001
+            std: 0.01
         }
         bias_filler {
             type: "constant"
@@ -305,10 +310,10 @@ layers {
     blobs_lr: 1
     blobs_lr: 2
     inner_product_param{
-        num_output: 3
+        num_output: 200
 	    weight_filler {
     		type: "gaussian"
-    		std: 0.001
+    		std: 0.1
     	}
     	bias_filler {
             type: "constant"
@@ -318,21 +323,20 @@ layers {
 }
 # --------------------------------OUTPUT-----------------------------------
 layers {
-    name: "softmax"
-    type: SOFTMAX
-    bottom: "fc8"
-    top: "softmax"
+   name: "softmaxOut"
+   type: SOFTMAX
+   bottom: "fc8"
+   top: "softmaxOut"
 }
+
 layers {
-    name: "softmax_loss"
-    type: HINGE_LOSS
-    bottom: "fc8"
-    bottom: "declabel"
-    top: "softmax_loss"
-    include: {
-        phase: TRAIN
-    }
+   name: "softmaxOut2"
+   type: EUCLIDEAN_LOSS
+   bottom: "fc8"
+   bottom: "binlabel"
+   top: "softmaxOut2"
 }
+
 layers {
     name: "accuracy"
     type: ACCURACY

@@ -47,11 +47,13 @@ for i=1:length(objs)
                 ymin=1;
             end
             %CREATE a temporary object
-            obj_temp    = im.data((ymin:ymax),(xmin:xmax),:);
+            obj_temp             = im.data((ymin:ymax),(xmin:xmax),:);
             % We turn off antialiasing to better match OpenCV's bilinear (SPP)
-            object.data    = imresize(obj_temp,dims, 'bilinear', 'antialiasing', false);
-            object.labels  = labels;
-            object.source  = im.path;
+            object.data          = imresize(obj_temp,dims, 'bilinear', 'antialiasing', false);
+            %object.labels        = labels; %<<--- for debug
+            object.labels.vector = labels.vector;
+            object.labels.uid    = labels.uid;
+            %object.source        = im.path;%<<--- for debug
             save(obj_fpath,'object','-v6'); %<<--- remove v6 to save some space
         end
         objs_fpaths{counter}=obj_fpath;            
@@ -75,6 +77,7 @@ if isempty(im.data)
         if size(im_temp,3)==1
             im_temp = repmat(im_temp,1,1,3);
         end
+        %im_temp = whitebalance(im_temp);
         image = imresize(im_temp,im.size, 'bilinear', 'antialiasing', false);
     catch err
         throw(err);

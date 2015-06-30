@@ -1,5 +1,5 @@
 function gaborArray = gaborFilterBank2D(u,v,m,n,gr,freq,gai,psi)
-                    
+
 % GABORFILTERBANK generates a custum Gabor filter bank. 
 % It creates a u by v array, whose elements are m by n matries; 
 % each matrix being a 2-D Gabor filter.
@@ -32,12 +32,13 @@ function gaborArray = gaborFilterBank2D(u,v,m,n,gr,freq,gai,psi)
 %       haghighat@ieee.org
 %       I WILL APPRECIATE IF YOU CITE OUR PAPER IN YOUR WORK.
 
-
+% MODIFIED BY: PAPAVASILEIOU LAMPROS - KATSILEROS PETROS
+% DATE       : 1/6/2015
+% FOR        : vision team - AUTH
 
 
 
 %% Create Gabor filters
-
 % Create u*v gabor filters each being an m*n matrix
 
 gaborArray = zeros(m,n,u);
@@ -45,6 +46,8 @@ fmax = gai;
 gama = sqrt(2);
 eta = 2*sqrt(2);
 
+offset = m/4;
+ 
 for i = 1:u
     
     fu = fmax/((sqrt(2))^(i-1));
@@ -52,17 +55,29 @@ for i = 1:u
     beta = fu/eta;
     
     for j = 1:v
-        tetav = ((j-1)/v)*pi;
-        gFilter = zeros(m,n);
-        
-        for x = 1:m
-            for y = 1:n
-                xprime = (x-((m+1)/2))*cos(tetav)+(y-((n+1)/2))*sin(tetav);
-                yprime = -(x-((m+1)/2))*sin(tetav)+(y-((n+1)/2))*cos(tetav);
-                gFilter(x,y) = (fu^2/(pi*gama*eta))*exp(-((alpha^2)*(xprime^2)+(beta^2)*(yprime^2)))*exp(1i*(freq*pi*fu*xprime+psi));
-            end
+%%
+    psi= datasample([0;-pi/2],1);
+   
+    if psi == 0
+       freq=1;
+    else
+       freq=0.5;
+    end
+    offset_x = -offset + (rand(1) * 2 * offset);
+    offset_y = -offset + (rand(1) * 2 * offset);
+    tetav= rand(1) * (pi/2);
+%%         
+          
+    gFilter = zeros(m,n);
+
+    for x = 1:m
+        for y = 1:n
+            xprime = (x-((m+1)/2))*cos(tetav)+(y-((n+1)/2))*sin(tetav)+offset_x;
+            yprime = -(x-((m+1)/2))*sin(tetav)+(y-((n+1)/2))*cos(tetav)+offset_y;
+            gFilter(x,y) = (fu^2/(pi*gama*eta))*exp(-((alpha^2)*(xprime^2)+(beta^2)*(yprime^2)))*exp(1i*(freq*pi*fu*xprime+psi));
         end
-        gaborArray(:,:,j) = real(gFilter);
+    end
+    gaborArray(:,:,j) = real(gFilter);
         
     end
 end
@@ -88,6 +103,4 @@ for i = 1:4
         imshow(real(gaborArray(:,:,(i-1)*(v/4) + j)),[]);
     end
 end
-end
-
 end

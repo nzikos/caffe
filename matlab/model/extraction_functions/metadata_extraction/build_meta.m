@@ -113,10 +113,10 @@ function map = map_relations(ifields,data,map,curr_depth,idx)
 %   OUTPUT
 %   map     :   Map takes as input the value it is assigned to map and as
 %               output returns the indices where this value is found under
-%               data. If the depth is of order 2 every value returned has 2
+%               data. (If the depth is of order 2 every value returned has 2
 %               Indices, if depth is order of 3, returned values are 3 
-%               indices and so on. May return multiple outputs if the value
-%               is found multiple times.
+%               indices and so on. -COMMENTED OUT FUNCTIONALITY) May return
+%               multiple outputs if the value is found multiple times.
 %
 %  AUTHOR: PROVOS ALEXIS 
 %  DATE:   20/4/2015

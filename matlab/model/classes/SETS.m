@@ -14,7 +14,7 @@ classdef SETS
     methods
         function obj = SETS(a)
             if length(a)<2
-                APP_LOG('error_last',0,'Wrong number of sets provided: %d',length(a));
+                APP_LOG('last_error','Wrong number of sets provided: %d',length(a));
             end
             obj.set=a;
         end

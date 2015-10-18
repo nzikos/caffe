@@ -41,19 +41,19 @@ classdef METADATA
         end
         
         function save_metadata(obj,meta_file)
-            APP_LOG('info',0,'Save metadata...');
+            APP_LOG('info','Save metadata...');
             data = obj.data;
             rmap = obj.rmap;
             save(meta_file,'data','rmap','-v6');
-            APP_LOG('info',0,'Metadata saved succesfully!');            
+            APP_LOG('info','Metadata saved succesfully!');            
         end        
         
         function obj = load_metadata(obj,meta_file)
-            APP_LOG('header',0,'Loading metadata from %s',meta_file);
+            APP_LOG('header','Loading metadata from %s',meta_file);
             load(meta_file);
             obj.data = data;
             obj.rmap = rmap;
-            APP_LOG('info',0,'Metadata loaded succesfully!');
+            APP_LOG('info','Metadata loaded succesfully!');
         end
     end
     

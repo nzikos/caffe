@@ -1,4 +1,4 @@
-function data = build_objs(set,meta,paths,dims,contest) %objs,meta,imdb,set,class_names_map)
+function data = build_objs(set,meta,paths,dims,contest)
 %BUILD_OBJS This function is used to extract the objects from the images
 %using the previously build metadata.
 
@@ -35,12 +35,12 @@ function data = build_objs(set,meta,paths,dims,contest) %objs,meta,imdb,set,clas
 %    FOR:    VISION TEAM - AUTH
 
 %%  PRINT HEADER
-APP_LOG('header',0,'Extracting objects...');
+APP_LOG('header','Extracting objects...');
 out = sprintf('%4s%22s[%9s]','N','Name','classID');
 for i=1:length(set)
     out = [out sprintf('%10s',set{i})];
 end
-APP_LOG('header',0,'%s',out);
+APP_LOG('header','%s',out);
 
 %% Init
 class_names_map = contest.class_names_map;
@@ -105,7 +105,7 @@ for j=1:length(classes)
 	end
     
     %Print class info
-    APP_LOG('info',0,'%s',out);
+    APP_LOG('info','%s',out);
     
 end
 end

@@ -19,8 +19,13 @@ classdef TRAIN_SGD < handle
             obj.caffe= caffe;
         end
         function obj = init(obj)
-            obj.Vt         = obj.caffe.zero_struct;
-            obj.curr_steps = 0;
+%           obj.Vt         = obj.caffe.zero_struct;
+            for i=1:obj.caffe.structure.n_layers
+                for j=1:2
+                    obj.Vt(i).weights{j}=zeros(size(obj.caffe.weights(i).weights{j}));
+                end
+            end
+            obj.curr_steps = 1;
         end
         function obj = set_params(obj,options)          
             switch (length(options))
@@ -49,25 +54,52 @@ classdef TRAIN_SGD < handle
                     obj.stepsize= options{4};
                     obj.wd      = options{5};
                 otherwise
-                    APP_LOG('last_error',0,'Erroneous options passed to SGD method');
+                    APP_LOG('last_error','Erroneous options passed to SGD method');
             end
         end
         
-        function update_weights(obj,const_layers,grads)
+        function update_weights(obj,const_layers,sum_grads,bpi)
             if ~mod(obj.curr_steps+1,obj.stepsize)
-                APP_LOG('info',3,'SGD changes learning rate from %f to %f',obj.lr,obj.lr*obj.gamma);
+                APP_LOG('info','SGD changes learning rate from %f to %f',obj.lr,obj.lr*obj.gamma);
+%               APP_LOG('info','SGD changes momentum rate from %f to %f',obj.m,obj.m*obj.gamma + 1 - obj.gamma);
                 obj.lr=obj.lr*obj.gamma;
-                obj.wd=obj.wd*obj.gamma;
+%               obj.m =obj.m*obj.gamma + 1 - obj.gamma;
             end
-            wcoeff= (1-obj.lr*obj.wd);
-            for i=1:obj.caffe.n_layers
-                if isempty(find(const_layers==i))
-                    for j=1:2
-                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - obj.lr * grads(i).weights{j};
-                        obj.caffe.weights(i).weights{j}=wcoeff*obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
+            
+%            wcoeff= (1-obj.lr*obj.wd);
+%           wcoeff= (obj.lr*obj.wd);
+ %           for i=1:obj.caffe.structure.n_layers
+%                if isempty(find(const_layers==i,1))
+%                    for j=1:2
+%                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - (obj.lr/bpi) * sum_grads(i).blob{j};
+%                        obj.caffe.weights(i).weights{j}=wcoeff*obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
+%                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - wcoeff*obj.caffe.weights(i).weights{j} - (obj.lr/bpi) * sum_grads(i).weights{j};
+%                        obj.caffe.weights(i).weights{j}=obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
+%                    end
+%                end
+%            end
+%             for i=1:obj.caffe.structure.n_layers
+%                 if isempty(find(const_layers==i,1))
+%                     for j=1:2
+%                         %Vt = m*Vt - (lr/bpi)*grads - lr*wd*Wt;
+%                         obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - (obj.lr/bpi) * sum_grads(i).blob{j} - obj.wd*obj.lr*obj.caffe.weights(i).weights{j};
+%                         obj.caffe.weights(i).weights{j}=obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
+%                     end
+%                 end
+%             end
+            lr_mult = obj.caffe.structure.lr_mult;
+            for i=1:obj.caffe.structure.n_layers
+                if isempty(find(const_layers==i,1))
+                    for j=1:length(obj.caffe.weights(i).weights) %weight + bias / weights
+                        %local_lr = lr * local_lr_mult;
+                        %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
+                        local_lr = obj.lr * lr_mult{i,j};
+                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - (local_lr/bpi) * sum_grads(i).blob{j} - obj.wd*local_lr*obj.caffe.weights(i).weights{j};
+                        obj.caffe.weights(i).weights{j}=obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
                     end
                 end
             end
+            clear grads;
             obj.caffe.set.weights();
             obj.curr_steps=obj.curr_steps+1;
         end

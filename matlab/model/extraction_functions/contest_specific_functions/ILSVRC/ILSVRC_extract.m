@@ -3,7 +3,7 @@ function objs_fpaths = ILSVRC_extract(this_meta,dims,labels,appendTo)
 %using the metadata extracted from a previous step.
 %% Explanation
 %   It is taking as input 1 entry of metadata array and extracts the
-%   objects under 'appendTo' directory. appendTo is set to be inside
+%   objects to 'appendTo' directory. appendTo is set to be inside
 %   cache/objects/'SET'
 %   The dimensions of the object are set under 'dims' input as a 2-element
 %   array [height width];
@@ -48,11 +48,13 @@ for i=1:length(objs)
             end
             %CREATE a temporary object
             obj_temp             = im.data((ymin:ymax),(xmin:xmax),:);
-            % We turn off antialiasing to better match OpenCV's bilinear (SPP)
+            % We turn off antialiasing to better match OpenCV's bilinear (SPP) 
+            % Should we release use it, since we are performing
+            % transformations on the fly?
+            % Shouldnt we randomize the interpolation method on the fly?
             object.data          = imresize(obj_temp,dims, 'bilinear', 'antialiasing', false);
             %object.labels        = labels; %<<--- for debug
-            object.labels.vector = labels.vector;
-            object.labels.uid    = labels.uid;
+            object.uid           = labels.uid;
             %object.source        = im.path;%<<--- for debug
             save(obj_fpath,'object','-v6'); %<<--- remove v6 to save some space
         end
@@ -60,8 +62,8 @@ for i=1:length(objs)
         counter = counter + 1;        
 	catch err
         [~,name,~] = fileparts(im.path);
-        APP_LOG('warning',0,'Failed extraction for image %s',name);
-        APP_LOG('warning',0,'Error message: %s',err.message);
+        APP_LOG('warning','Failed extraction for image %s',name);
+        APP_LOG('warning','Error message: %s',err.message);
 	end
 end
 end
@@ -70,7 +72,6 @@ end
 function image = read_image( im )
 %READ_IMAGE get the image handler. If the image is not loaded try to load
 %it
-
 if isempty(im.data)
     try
         im_temp = imread(im.path);

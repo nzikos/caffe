@@ -39,7 +39,7 @@ function [data,rmap] = build_meta(paths,contest,set)
 %   FOR:    vision team - AUTH
 
 %%  Build metadata
-    APP_LOG('header',0,'BUILDING META');
+    APP_LOG('header','BUILDING META');
     
     meta_ext    =contest.meta_extension;
     meta_paths  =paths.meta;
@@ -50,12 +50,12 @@ function [data,rmap] = build_meta(paths,contest,set)
     class_location = {'objs','name'};
       
 	for i=1:length(set)
-        APP_LOG('info',0,'Extracting %s set metadata',set{i});
+        APP_LOG('info','Extracting %s set metadata',set{i});
         data.(set{i}) = extract_meta(meta_paths.(set{i}),meta_ext,...
                                      imdb_paths.(set{i}),imdb_ext,...
                                      readmeta_function);
         
-        APP_LOG('info',0,'Mapping %s set metadata',set{i});
+        APP_LOG('info','Mapping %s set metadata',set{i});
         rmap.(set{i}) = containers.Map('KeyType','char','ValueType','any');
         rmap.(set{i}) = map_relations(class_location, data.(set{i}),rmap.(set{i}));
 	end
@@ -79,10 +79,10 @@ function meta = extract_meta(meta_dir,meta_ext,imdb_dir,imdb_ext,get_meta_from)
 %   FOR:    vision team - AUTH 
 
 %% GET FILES
-    APP_LOG('info',2,'Searching for %s files in %s',meta_ext,meta_dir);
+    APP_LOG('info','Searching for %s files in %s',meta_ext,meta_dir);
     list    =super_get_file_list(meta_dir,meta_ext);
     n_files =length(list);
-    APP_LOG('info',2,'Extracting from %d files...',n_files);
+    APP_LOG('info','Extracting from %d files...',n_files);
     
 %% EXTRACT
     meta = get_meta_from(list,imdb_dir,imdb_ext);

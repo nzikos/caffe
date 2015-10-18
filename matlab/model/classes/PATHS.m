@@ -47,18 +47,18 @@ classdef PATHS
             end
         end
         function obj = print_paths(obj)
-            APP_LOG('header',0,'PATHS INFO');
-            APP_LOG('info',0,'Cache directory: %s',obj.cache);
+            APP_LOG('header','PATHS INFO');
+            APP_LOG('info','Cache directory: %s',obj.cache);
             for i=1:length(obj.sets.set)
-                APP_LOG('info',0,'Meta %s set dir: %s',obj.sets.set{i},...
+                APP_LOG('info','Meta %s set dir: %s',obj.sets.set{i},...
                                              obj.meta.(obj.sets.set{i}));
-                APP_LOG('info',0,'Imdb %s set dir: %s',obj.sets.set{i},...
+                APP_LOG('info','Imdb %s set dir: %s',obj.sets.set{i},...
                                              obj.imdb.(obj.sets.set{i}));
-                APP_LOG('info',0,'Objects %s set dir: %s',obj.sets.set{i},...
+                APP_LOG('info','Objects %s set dir: %s',obj.sets.set{i},...
                                              obj.objects.(obj.sets.set{i}));
             end
-            APP_LOG('info',0,'Metadata file: %s',obj.meta_file);
-            APP_LOG('info',0,'Objects Index file: %s',obj.objects_file);
+            APP_LOG('info','Metadata file: %s',obj.meta_file);
+            APP_LOG('info','Objects Index file: %s',obj.objects_file);
         end
     end
     

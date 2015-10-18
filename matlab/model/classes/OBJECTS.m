@@ -24,6 +24,9 @@ classdef OBJECTS < handle
     properties
         dims;
         data;
+        mean;
+        std;
+        get_mean_std = 0
     end
     methods
         %% INIT
@@ -35,26 +38,67 @@ classdef OBJECTS < handle
         function obj = set_dims(obj,dims)
             obj.dims = dims;
         end
-    end
-    methods (Hidden = true)
-        %% BUILD OBJECTS
-        function obj = build_objects(obj,set,meta,paths,contest)
-            obj.data = build_objs(set,meta,paths,obj.dims,contest);
+        function obj = compute_mean_std(obj,value)
+            obj.get_mean_std = value;
         end
+    end
+    methods
         %% SAVE OBJECTS
         function save_objects(obj,obj_file)
-            APP_LOG('info',0,'Save Objects filepaths indexer...');
-            data = obj.data;
-            save(obj_file,'data','-v6');
-            APP_LOG('info',0,'Objects filepaths indexer saved succesfully!');            
+            APP_LOG('info','Save Objects filepaths indexer...');
+            this.data         = obj.data;
+            this.dims         = obj.dims;
+            this.mean         = obj.mean;
+            this.std          = obj.std;
+            this.get_mean_std = obj.get_mean_std;
+            save(obj_file,'this','-v6');
+            APP_LOG('info','Objects filepaths indexer saved succesfully!');            
         end        
         %% LOAD OBJECTS
         function obj = load_objects(obj,obj_file)
-            APP_LOG('header',0,'Loading Objects filepaths indexer from %s',obj_file);
+            APP_LOG('header','Loading Objects filepaths indexer from %s',obj_file);
             load(obj_file);
-            obj.data = data;
-            APP_LOG('info',0,'Objects filepaths indexer loaded succesfully!');
+            obj.data         = this.data;
+            obj.dims         = this.dims;
+            obj.mean         = this.mean;
+            obj.std          = this.std;
+            obj.get_mean_std = this.get_mean_std;
+            APP_LOG('info','Objects filepaths indexer loaded succesfully!');
         end
+        %% BUILD OBJECTS
+        function obj = build_objects(obj,set,meta,paths,contest)
+            obj.data = build_objs(set,meta,paths,obj.dims,contest);
+            if obj.get_mean_std
+                APP_LOG('info','Extracting mean and standard deviation from training samples...');
+                tmp_mean        = zeros([obj.dims.(set{1}) 3]);
+                variance        = zeros([obj.dims.(set{1}) 3]);            
+                counter         = 0;
+
+                for i = length(obj.data.(set{1})):-1:1 
+                    temp = obj.data.(set{1})(i).paths;
+                    parfor j = 1:length(temp)
+                        tmp = load(temp{j});
+                        tmp_mean= tmp_mean+double(tmp.object.data);
+                        counter = counter +1;
+                    end
+                    APP_LOG('debug','%4s%22s[%9s] mean extraction done',num2str(i),obj.data.(set{1})(i).labels.name,obj.data.(set{1})(i).labels.contestID);
+                end
+                tmp_mean = uint8(tmp_mean./counter);
+                                
+                for i = 1: length(obj.data.(set{1}))
+                    temp = obj.data.(set{1})(i).paths;                    
+                    parfor j = 1:length(temp)
+                        tmp = load(temp{j});
+                        variance = variance + double(tmp.object.data - tmp_mean).^2;
+                    end
+                    APP_LOG('debug','%4s%22s[%9s] std extraction done',num2str(i),obj.data.(set{1})(i).labels.name,obj.data.(set{1})(i).labels.contestID);
+                end
+                variance = variance./counter;
+                
+                obj.std = uint8(sqrt(variance));
+                obj.mean= tmp_mean;
+            end
+        end        
     end
     
 end

@@ -14,8 +14,6 @@ function labels = object_labels(class_names_map,classes,j)
 
     labels.name      = class_names_map(classes{j});
     labels.contestID = classes{j};
-    labels.vector    = zeros(length(classes),1);
-    labels.vector(j) = 1;
     labels.uid       = j-1; %caffe is 0-based
     
 end

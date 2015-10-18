@@ -40,7 +40,7 @@ classdef CONTEST
     methods
         function obj = CONTEST(in)
             if ~isfield(in,'name')
-                APP_LOG('error_lat',0,'You need to pass input.name with name being the contest name');
+                APP_LOG('last_error','You need to pass input.name with name being the contest name');
             end
             switch(in.name)
                 case 'ILSVRC'
@@ -69,7 +69,7 @@ classdef CONTEST
                                         'meta_det.mat');
                                     
                     obj.class_names_map = get_ILSVRC_class_desc(contest_file);
-                    APP_LOG('info',0,'Contest set to ILSVRC');
+                    APP_LOG('info','Contest set to ILSVRC');
                 case 'User defined'
                     obj.name = in.name;
                     obj.meta_extension = in.meta_extension;
@@ -78,7 +78,7 @@ classdef CONTEST
                     obj.extract_objects= in.extract_objects;
                     obj.class_names_map= in.class_names_map;
                 otherwise
-                    APP_LOG('error_last',0,'Contest %s Not supported. Use "User defined" and supply the appropriate functions',in.name);
+                    APP_LOG('last_error','Contest %s Not supported. Use "User defined" and supply the appropriate functions',in.name);
             end
         end
     end

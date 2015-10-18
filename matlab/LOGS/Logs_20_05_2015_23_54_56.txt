@@ -1,9 +1,0 @@
-[20-05-2015 23:54:56] Contest set to ILSVRC
-
-[20-05-2015 23:54:56] LOADING METADATA FROM /MEDIA/ALEXIS/SSD/CACHE/META.MAT
-----------------------------------------------------------------------------
-[20-05-2015 23:55:02] Metadata loaded succesfully!
-
-[20-05-2015 23:55:02] LOADING OBJECTS FILEPATHS INDEXER FROM /MEDIA/ALEXIS/SSD/CACHE/OBJECTS.MAT
-------------------------------------------------------------------------------------------------
-[20-05-2015 23:55:04] Objects filepaths indexer loaded succesfully!

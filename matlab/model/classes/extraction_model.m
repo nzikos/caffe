@@ -29,21 +29,17 @@ classdef extraction_model < handle
         contest;
         metadata;
         objects;
-        LOGS;
     end
     
     methods
 %% CONSTRUCTOR
         function model = extraction_model()
-            diary off;
+            APP_LOG('enable',fullfile(pwd,'LOGS',strcat('Logs_',datestr(now, 'DD_mm_YYYY_HH_MM_SS'),'.txt')));
             model.sets=[];
             model.paths=[];
             model.contest=[];
-            model.LOGS=[];
-            model.enable_logs();
             model.metadata=METADATA();
             model.objects =OBJECTS();
-            diary on;
         end
 %% SETTERS
         function set_sets(model,my_sets)
@@ -83,20 +79,4 @@ classdef extraction_model < handle
             model.objects.save_objects(model.paths.objects_file);
         end
     end
-    
-    methods (Hidden = true)
-        %% FUNCTIONS
-        function enable_logs(model)            
-            model.LOGS = fullfile(pwd,'LOGS',strcat('Logs_',datestr(now, 'DD_mm_YYYY_HH_MM_SS'),'.txt'));
-            [logs_dir,~,~]  =   fileparts(model.LOGS);
-            if ~exist(logs_dir,'dir')
-                try
-                    mkdir(logs_dir);
-                catch err
-                    error(err.message);
-                end
-            end
-            diary(model.LOGS);
-        end
-    end 
 end

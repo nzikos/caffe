@@ -7,20 +7,20 @@ function handle_dir(directory,behavior)
             if ~exist(directory,'dir')
                 res=mkdir(directory);
                 if(res)
-                    APP_LOG('info',4,'Created directory %s',directory);
+                    APP_LOG('debug','Created directory %s',directory);
                 else
-                    error('Permission denied while creating %s',directory);                    
+                    APP_LOG('last_error','Permission denied while creating %s',directory);                    
                 end
             else
-                APP_LOG('info',4,'Directory %s exists',directory);                
+                APP_LOG('debug','Directory %s exists',directory);                
             end
         case 'throw error'
             if ~exist(directory,'dir')
-                error('Directory %s does not exist',directory);
+                APP_LOG('last_error','Directory %s does not exist',directory);
             else
-                APP_LOG('info',4,'Directory %s exists',directory);                
+                APP_LOG('debug','Directory %s exists',directory);                
             end
         otherwise
-            error('No such behavior: "%s" for hndl_dir',behavior);
+            APP_LOG('last_error','No such behavior: "%s" for hndl_dir',behavior);
     end
 end

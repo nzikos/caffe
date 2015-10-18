@@ -72,7 +72,7 @@ PY$(PROJECT)_SRC := python/$(PROJECT)/_$(PROJECT).cpp
 PY$(PROJECT)_SO := python/$(PROJECT)/_$(PROJECT).so
 PY$(PROJECT)_HXX := include/$(PROJECT)/python_layer.hpp
 # MAT$(PROJECT)_SRC is the matlab wrapper for $(PROJECT)
-MAT$(PROJECT)_SRC := matlab/$(PROJECT)/mat$(PROJECT).cpp
+MAT$(PROJECT)_SRC := matlab/$(PROJECT)/mat$(PROJECT).cu
 ifneq ($(MATLAB_DIR),)
 	MAT_SO_EXT := $(shell $(MATLAB_DIR)/bin/mexext)
 endif
@@ -445,9 +445,7 @@ $(MAT$(PROJECT)_SO): $(MAT$(PROJECT)_SRC) $(STATIC_NAME)
 		exit 1; \
 	fi
 	@ echo MEX $<
-	$(Q)$(MATLAB_DIR)/bin/mex $(MAT$(PROJECT)_SRC) \
-			CXX="$(CXX)" \
-			CXXFLAGS="\$$CXXFLAGS $(MATLAB_CXXFLAGS)" \
+	$(Q)$(MATLAB_DIR)/bin/mex $(MAT$(PROJECT)_SRC) "-largeArrayDims" "-I include/" "-I .build_release/src"\
 			CXXLIBS="\$$CXXLIBS $(STATIC_LINK_COMMAND) $(LDFLAGS)" -output $@
 
 runtest: $(TEST_ALL_BIN)

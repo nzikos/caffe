@@ -10,9 +10,9 @@ index=1;
 
 %Make sure that classes with minimum number of objects get first into the vector
 for i=1:length(fpaths)
-    amount(i)=length(fpaths(i).paths);
+    volume(i)=length(fpaths(i).paths);
 end
-[~,sorted_indices]=sort(amount,'ascend');
+[~,sorted_indices]=sort(volume,'ascend');
 
 %Create vector
 for oo=1:length(sorted_indices)

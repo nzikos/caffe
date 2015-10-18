@@ -3,23 +3,29 @@
 %It's purpose is to add all functions stored for this project into the
 %search path of matlab environment.
 
-%PLACE WHERE MODEL related files SHOULD BE FOUND
+%a=gpuArray(rand(1)); clear a;
+
+%DIRECTORY OF MODEL related files
 s_dirs =    genpath('model');
 addpath(s_dirs);
 
-%PLACE WHERE NETWORK FUNCTIONS SHOULD BE FOUND
+%DIRECTORY OF NETWORK FUNCTIONS
 s_dirs =    genpath('network');
 addpath(s_dirs);
 
-%PLACE WHERE CAFFE SHOULD BE FOUND
+%DIRECTORY OF DEPLOYED NETWORK
+s_dirs =    genpath('DEPLOY');
+addpath(s_dirs);
+
+%DIRECTORY OF CAFFE
 s_dirs =    genpath('caffe');
 addpath(s_dirs);
 
-%PLACE WHERE PRETRAINED LAYER DATA-FILLERS SHOULD BE FOUND
+%DIRECTORY OF PRETRAINED LAYER DATA-FILLERS
 %s_dirs =    genpath('pretrained_functions');
 %addpath(s_dirs);
 
-%PLACE WHERE UTILS SHOULD BE FOUND
+%DIRECTORY OF UTILS
 s_dirs =    genpath('utils');
 addpath(s_dirs);
 

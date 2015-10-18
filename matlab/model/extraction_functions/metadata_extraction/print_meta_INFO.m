@@ -7,7 +7,7 @@ out = sprintf('%4s%22s[%9s]','N','Name','classID');
 for i=1:length(set)
     out = [out sprintf('%10s',set{i})];
 end
-APP_LOG('header',0,'%s',out);
+APP_LOG('header','%s',out);
 
 % Init total_objs
 for i=1:length(set)
@@ -30,11 +30,11 @@ for j=1:length(classes)
         end
         out = [out sprintf('%10s',num2str(objects))];
     end
-    APP_LOG('info',0,'%s',out);
+    APP_LOG('info','%s',out);
 end 
 
 for i=1:length(set)
-	APP_LOG('header',0,'%s SET',upper(set{i}));
+	APP_LOG('header','%s SET',upper(set{i}));
     unclassified=0;
     set_size=length(data.(set{i}));
     for j=1:set_size
@@ -43,9 +43,9 @@ for i=1:length(set)
         end
     end
     if unclassified~=0
-        APP_LOG('warning',0,'%d/%d metadata files from %s set have no objects, will be ignored',unclassified,set_size,set{i});
+        APP_LOG('warning','%d/%d metadata files from %s set have no objects, will be ignored',unclassified,set_size,set{i});
     end
-    APP_LOG('info',0,'There are %d available objects in %s set',total_objs.(set{i}),set{i});
+    APP_LOG('info','There are %d available objects in %s set',total_objs.(set{i}),set{i});
 end
 
 end

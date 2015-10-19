@@ -76,7 +76,6 @@ classdef CAFFE < handle
             %CAFFE SETTERS HANDLERS
             obj.set.weights             = @()caffe('set_weights',obj.weights);
             obj.set.input               = @(batch)caffe('upload_input',batch);
-            obj.set.device              = @(id)caffe('set_device',id);
             %CAFFE GETTERS HANDLERS
             obj.get.weights             = @()caffe('get_weights');
             obj.get.output              = @()caffe('download_output');
@@ -97,14 +96,18 @@ classdef CAFFE < handle
         end
         
         %% SETTERS
-        function set_use_gpu(obj,arg_use_gpu)
+        function set_use_gpu(obj,arg_use_gpu,device_id)
             if arg_use_gpu==0 || arg_use_gpu==1
                 obj.use_gpu = arg_use_gpu;
             else
                 APP_LOG('last_error','Valid inputs for use_gpu are 0 or 1');
             end
+            if device_id < gpuDeviceCount
+                caffe('set_device',device_id);            
+            else
+                APP_LOG('last_error','GPI Device with id %d does not exist. Bounds are [0,%d)',device_id,gpuDeviceCount);
+            end
         end
-
         function set_phase(obj,phase)
             obj.action.reset();
             switch phase

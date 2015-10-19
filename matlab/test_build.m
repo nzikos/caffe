@@ -40,8 +40,7 @@ net.set_model(model);
 clear model;
 
 %caffe---------------------------------------------------------
-net.caffe.set_use_gpu(1);
-net.caffe.set.device(0);
+net.caffe.set_use_gpu(1,0);                                % (enable/disable, device_id)
 net.caffe.structure.set_batch_size('train',128);
 net.caffe.structure.set_batch_size('validation',128);
 net.caffe.structure.set_batch_size('test',10);

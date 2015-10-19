@@ -79,6 +79,7 @@ net.caffe.init('train');
 % net.caffe.set_layer(4,random_bank_filters(3,3,384,384),0);
 % net.caffe.set_layer(5,random_bank_filters(3,3,384,256),0);
 
+net.caffe.batch_factory.set_async_queue_size(5);
 net.caffe.batch_factory.use_random_segmentation(1,1);        %1-enable/0-disable | 2nd parameter frequency per batch [0-1]
 net.caffe.batch_factory.use_rotation(0,[-20 20],0.4);        %Use rotations. Rotate 40% of batch with a random angle between [-10,10].
 net.caffe.batch_factory.use_projections(0,0);                %Use projections (hardcoded params, TESTS PENDING)
@@ -87,7 +88,7 @@ net.caffe.batch_factory.normalize_batches(0);                %[X - E(D)]/std(D)
 %caffe---------------------------------------------------------
 
 net.set_batches_per_iter(1);                  %How many batches to perform 1 weight update 
-net.set_validations_per_epoch(1);
+net.set_validations_per_epoch(2);
 
 %net.train.set_constant_layers(1);             %[1 2 3 4 5] for multiple constant layers
 
@@ -102,6 +103,6 @@ net.validation.set_best_target('Average','error')
 %net.set_max_iterations(350000); %STOP parameter - What is the maximum size of iterations to trigger a stop
 net.set_max_iterations(inf);                     %STOP parameter - What is the maximum size of epochs to trigger a stop
 net.set_snapshot_time(8*60);                     %Save a snapshot of the net every (time in minutes)
-net.set_display(400);                            %Display training stats every x iterations
+net.set_display(1);                              %Display training stats every x iterations
 net.set_compute_train_error(0);                  %Enable(1)/Disable(0) computation of train error to increase speed in case of latency due to caffe
 net.start();

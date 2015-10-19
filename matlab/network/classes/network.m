@@ -194,7 +194,7 @@ classdef network < handle
             if ~mod(net.iter,net.iters_per_display) || force_print
                 
                 max_epochs=floor(net.max_iterations/net.iters_per_epoch);
-                APP_LOG('info','iter: %d/%d | epoch: %d/%d | pool: %d remaining objects',net.iter,net.iters_per_epoch,net.epoch,max_epochs,length(net.caffe.batch_factory.train_objects)-net.caffe.batch_factory.train_objects_pos);
+                APP_LOG('info','iter: %d/%d | epoch: %d/%d | pool: %d remaining objects',net.iter,net.iters_per_epoch,net.epoch,max_epochs,length(net.caffe.batch_factory.train_objects)-(net.caffe.batch_factory.train_objects_pos-1));
                 
                 if(net.train.compute_train_error)
                     mean_error=mean(net.train.error(end-net.iters_per_display+1:end));                

@@ -34,17 +34,17 @@ classdef BATCH_FACTORY < handle
         projections_freq = 0;
         
         train_objects          = [];
-        train_objects_pos      = [];
+        train_objects_pos      = 1;
         validation_objects     = [];
-        validation_objects_pos = [];
+        validation_objects_pos = 1;
         %Training batch queue
         train_queue;
-        train_queue_size = 5;
+        train_queue_size = 1;
         train_queue_idx  = 1;
         train_curr_paths;
         
         validation_queue;        
-        validation_queue_size = 5;
+        validation_queue_size = 1;
         validation_queue_idx =1;
         validation_curr_paths;
     end
@@ -52,6 +52,13 @@ classdef BATCH_FACTORY < handle
     methods
         %% INIT
         function obj = BATCH_FACTORY(net_structure)
+            obj.net_structure = net_structure;
+        end
+
+        %% SET QUEUE SIZE
+        function set_async_queue_size(obj,size)
+            obj.train_queue_size = size;
+            obj.validation_queue_size = size;
             if(~isempty(gcp('nocreate')))
                 p=gcp();
                 if(p.NumWorkers~=obj.train_queue_size)
@@ -60,12 +67,9 @@ classdef BATCH_FACTORY < handle
                 end
             else
                 parpool(obj.train_queue_size);                
-            end            
-            obj.train_objects_pos  = 0;
-            obj.validation_objects_pos = 1;
-            obj.net_structure = net_structure;
+            end                        
         end
-        
+                
         %% SET training objects paths
         function set_train_objects(obj,arg_objects)
             obj.train_objects = vectorize_objects_fpaths(arg_objects);
@@ -123,18 +127,18 @@ classdef BATCH_FACTORY < handle
         
         %% Paths assignment to workers
         function assign_training_paths(obj,which_queue_id)
-            from = obj.train_objects_pos + 1;
+            from = obj.train_objects_pos;
             to   = obj.train_objects_pos + obj.net_structure.train_batch_size;
             obj.train_objects_pos = to;
-            obj.train_curr_paths{which_queue_id} = obj.train_objects(from:to);
+            obj.train_curr_paths{which_queue_id} = obj.train_objects(from+1:to);
         end
         
         function assign_validation_work(obj,which_queue_id)
-            from = obj.validation_objects_pos + 1;
+            from = obj.validation_objects_pos;
             to   = obj.validation_objects_pos + obj.net_structure.val_batch_size;
             if(to <= length(obj.validation_objects))
                 obj.validation_objects_pos = to;                
-                x.paths                   = obj.validation_objects(from:to);
+                x.paths                    = obj.validation_objects(from+1:to);
                 obj.validation_queue{which_queue_id}   = parfeval(@async_read_from_disk,1,x); %put some work
             else
                 obj.validation_queue{which_queue_id}   = []; %no work assigned
@@ -212,8 +216,8 @@ classdef BATCH_FACTORY < handle
         end
 
         function out = prepare_validation_batch(obj)            
-            obj.validation_objects_pos = 0;
-            %Initial assumption - we are assuming that val_batch_size is less than total validation objects.
+            obj.validation_objects_pos = 1;
+            %Initial assumption - we are assuming that validation_batch_size is less than total validation objects.
             for i=1:obj.validation_queue_size
                 obj.assign_validation_work(i);
             end

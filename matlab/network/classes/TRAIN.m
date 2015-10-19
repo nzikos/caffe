@@ -87,11 +87,12 @@ methods
         current_error =0;
 
         %We are assuming that batch size * iters is smaller than number of objects
-        if (length(bfactory.train_objects)-bfactory.train_objects_pos<rcaffe.structure.train_batch_size*train.batches_per_iter)
+        if (length(bfactory.train_objects)-(bfactory.train_objects_pos-1)<rcaffe.structure.train_batch_size*train.batches_per_iter)
+            APP_LOG('debug','Pool size found to contain %d objects',length(bfactory.train_objects)-(bfactory.train_objects_pos-1));
             APP_LOG('debug','Random rearrangement of training objects');
             rand_idxs = randperm(length(bfactory.train_objects),length(bfactory.train_objects));
             bfactory.train_objects      = bfactory.train_objects(rand_idxs);
-            bfactory.train_objects_pos  = 0;
+            bfactory.train_objects_pos  = 1;
         end
         
         for i=1:train.batches_per_iter

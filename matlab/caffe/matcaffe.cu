@@ -608,7 +608,7 @@ static void set_mode_gpu(MEX_ARGS) {
 
 //--------API CALL 'set_device'------------------------------------------------
 //PURPOSE:
-//	-SETS WHICH GPU DEVICE SHALL BE USED FOR COMPUTATIONS
+//	-SETS WHICH GPU DEVICE WILL BE USED FOR COMPUTATIONS
 //ARGUMENTS:
 //	-DEVICE_ID
 //RETURNS:

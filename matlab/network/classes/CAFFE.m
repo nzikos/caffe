@@ -93,6 +93,8 @@ classdef CAFFE < handle
             
             obj.structure               = NET_STRUCTURE(prototxt_path);            
             obj.batch_factory           = BATCH_FACTORY(obj.structure);
+            
+            obj.action.reset();
         end
         
         %% SETTERS
@@ -102,9 +104,14 @@ classdef CAFFE < handle
             else
                 APP_LOG('last_error','Valid inputs for use_gpu are 0 or 1');
             end
-            gpuDevice([]); %cleanup
-            gpuDevice(device_id+1); %select / handle_erroneous_id
-            caffe('set_device',device_id); %set to caffe                
+            %gpuDevice([]); %cleanup
+%            obj.action.reset();
+            g = parallel.gpu.GPUDevice.getDevice(device_id+1);
+            if ~g.DeviceSelected
+                gpuDevice(device_id+1); %select / handle_erroneous_id                
+                caffe('set_device',device_id); %set to caffe
+            end
+            APP_LOG('info','GPU Device set to %s',g.Name);                        
         end
         function set_phase(obj,phase)
             obj.action.reset();

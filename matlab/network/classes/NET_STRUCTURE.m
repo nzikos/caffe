@@ -115,7 +115,7 @@ classdef NET_STRUCTURE < handle
         end
         %% ADD CONVOLUTIONAL LAYER
         function add_CONV_layer(structure,name,number_of_outputs,kernel,...
-                                pad,stride,bias_term,weight_filler_type,...
+                                stride,pad,bias_term,weight_filler_type,...
                                 weight_filler_value,weight_lr_mult,...
                                 bias_filler_type,bias_filler_value,bias_lr_mult)
 
@@ -252,7 +252,7 @@ classdef NET_STRUCTURE < handle
                                     hyper_params.beta,hyper_params.norm_region);
         end
         %% ADD POOLING LAYER
-        function add_POOL_layer(structure,name,method,kernel,pad,stride)
+        function add_POOL_layer(structure,name,method,kernel,stride,pad)
             s.method                = upper(method);
             switch length(kernel)
                 case 1

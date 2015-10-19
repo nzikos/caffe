@@ -102,11 +102,9 @@ classdef CAFFE < handle
             else
                 APP_LOG('last_error','Valid inputs for use_gpu are 0 or 1');
             end
-            if device_id < gpuDeviceCount
-                caffe('set_device',device_id);            
-            else
-                APP_LOG('last_error','GPI Device with id %d does not exist. Bounds are [0,%d)',device_id,gpuDeviceCount);
-            end
+            gpuDevice([]); %cleanup
+            gpuDevice(device_id+1); %select / handle_erroneous_id
+            caffe('set_device',device_id); %set to caffe                
         end
         function set_phase(obj,phase)
             obj.action.reset();

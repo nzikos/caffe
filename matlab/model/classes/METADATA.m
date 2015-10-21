@@ -1,4 +1,4 @@
-classdef METADATA
+classdef METADATA < handle
     %METADATA contains the metadata array of structs extracted from
     %         paths.metadata directories.
     %Attributes:
@@ -28,7 +28,7 @@ classdef METADATA
             obj.rmap=[];
         end
         
-        function obj = build_metadata(obj,paths,contest,set)
+        function build_metadata(obj,paths,contest,set)
             [obj.data,obj.rmap] = build_meta(paths,contest,set);
         end
         
@@ -48,7 +48,7 @@ classdef METADATA
             APP_LOG('info','Metadata saved succesfully!');            
         end        
         
-        function obj = load_metadata(obj,meta_file)
+        function load_metadata(obj,meta_file)
             APP_LOG('header','Loading metadata from %s',meta_file);
             load(meta_file);
             obj.data = data;

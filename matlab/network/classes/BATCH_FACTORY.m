@@ -1,15 +1,55 @@
 classdef BATCH_FACTORY < handle
     %BATCH_FACTORY class purpose is to create a batch of images in order to
     %be processed by caffe.
-    %       train_batch_size : The number of training objects which are, at
-    %                          once, send to caffe while training.
-    %       val_batch_size   : The number of validation objects which are, at
-    %                          once, send to caffe while validating.
-    %       test_batch_size  : The number of testing images which are, at
-    %                          once, send to caffe while testing.
-    %       input_dims       : The size [HxW] of the images caffe expects 
-    %                          to get.
-    %       use_flip         : use flipped images or not.
+    %% ATTRIBUTES
+    %       train_batch_size       : The number of training objects which
+    %                                are,at once, send to caffe while training.
+    %       val_batch_size         : The number of validation objects which are, 
+    %                                at once, send to caffe while validating.
+    %       test_batch_size        : The number of testing images which are, at
+    %                                once, send to caffe while testing.
+    %       input_dims             : The size [HxW] of the images caffe expects 
+    %                                to get.
+    %       use_mean_std           : Use mean and std extracted from
+    %                                training set in order to normalize
+    %                                samples. mean and std dims are [HxWxD]
+    %       use_flip               : Use flipped objects or not.
+    %       use_random_segments    : Use random segments from the objects or
+    %                                not.
+    %       use_rot                : Use rotated images or not.
+    %       use_projs              : Use projections (projective2d function)
+    %
+    %       freq_random_segments   : Ratio of objects random segmentation per
+    %                                batch
+    %       rot_freq               : Ratio of objects rotation per batch
+    %       projections_freq       : Frequency of projected objects per batch
+    %       
+    %       rot_angle_bounds       : [minimum_angle maximum_angle] in degrees
+    %
+    %       train_objects          : pool of objects scheduled for training
+    %       train_objects_pos      : index for train_objects
+    %       validation_objects     : pool of objects scheduled for validation
+    %       validation_objects_pos : index for validation_objects
+    %   
+    %       train_queue            : queue for async batch
+    %                                load/augmentation during training
+    %       validation_queue       : queue for async batch
+    %                                load during validation
+    %       train_queue_size       : size of queue
+    %       validation_queue_size  : size of queue
+    %
+    %       train_queue_idx        : index for training queue
+    %       validation_queue_idx   : index for validation queue
+    %
+    %       train_curr_paths       : Cell{train_queue_size} contains paths
+    %                                currently loaded on each batch of the queue
+    %       validation_curr_paths  : Cell{validation_queue_size} contains paths
+    %                                currently loaded on each batch of the queue
+    %
+    %% SETTERS
+    %       set_async_queue_size   : Sets the size of train and validation
+    %                                queues and starts matlab's pool
+    %       set_train_objects      : Gets 
     %
     %%      AUTHOR: PROVOS ALEXIS
     %       DATE:   20/5/2015
@@ -21,31 +61,35 @@ classdef BATCH_FACTORY < handle
         mean             = [];
         std              = [];
         
-        use_random_segments = 0;
-        freq_random_segments= 0;
-        
         use_flip         = 0;
-        
+        use_random_segments = 0;        
         use_rot          = 0;
-        rot_angle_bounds = [0 0];
-        rot_freq         = 0;
-
         use_projs        = 0;
+        
+        freq_random_segments= 0;        
+        rot_freq         = 0;
         projections_freq = 0;
         
+        rot_angle_bounds = [0 0];
+                
         train_objects          = [];
-        train_objects_pos      = 1;
+        train_objects_pool     = [];
+        train_objects_class_idx= 1;
+        train_objects_pos      = 0;
         validation_objects     = [];
-        validation_objects_pos = 1;
+        validation_objects_pos = 0;
+
         %Training batch queue
         train_queue;
-        train_queue_size = 1;
-        train_queue_idx  = 1;
-        train_curr_paths;
-        
         validation_queue;        
+        
+        train_queue_size = 1;
         validation_queue_size = 1;
+        
+        train_queue_idx  = 1;
         validation_queue_idx =1;
+        
+        train_curr_paths;
         validation_curr_paths;
     end
     
@@ -72,9 +116,12 @@ classdef BATCH_FACTORY < handle
                 
         %% SET training objects paths
         function set_train_objects(obj,arg_objects)
-            obj.train_objects = vectorize_objects_fpaths(arg_objects);
-            rand_idxs         = randperm(length(obj.train_objects),length(obj.train_objects));
-            obj.train_objects = obj.train_objects(rand_idxs);
+            for i=length(arg_objects):-1:1
+                obj.train_objects{i,1}      = arg_objects(i).paths;
+            end
+            obj.train_objects_pool = obj.train_objects;
+%            rand_idxs         = randperm(length(obj.train_objects),length(obj.train_objects));
+%            obj.train_objects = obj.train_objects(rand_idxs);
         end
         
         %% SET validation objects paths
@@ -90,11 +137,16 @@ classdef BATCH_FACTORY < handle
         
         %% SET Whether to use mean/std for batch normalization
         function normalize_batches(obj,arg)
-            obj.use_mean_std = arg;
-            if obj.use_mean_std
-                obj.mean       = single(imresize(obj.mean,[obj.net_structure.object_height obj.net_structure.object_width] ,'bilinear','antialiasing',false));
-                obj.std        = single(imresize(obj.std ,[obj.net_structure.object_height obj.net_structure.object_width],'bilinear','antialiasing',false));
-            end            
+            %This is usable only when metadata contain the extracted mean and std from the dataset
+            if obj.use_mean_std && ~arg    
+                obj.use_mean_std = arg;
+                if obj.use_mean_std
+                    obj.mean       = single(imresize(obj.mean,[obj.net_structure.object_height obj.net_structure.object_width] ,'bilinear','antialiasing',false));
+                    obj.std        = single(imresize(obj.std ,[obj.net_structure.object_height obj.net_structure.object_width],'bilinear','antialiasing',false));
+                end            
+            else
+                APP_LOG('warning','Metadata have not computed mean and std from current dataset. Ignoring Force use');
+            end
         end
         
         %% SET training objects flipping attribute
@@ -127,10 +179,26 @@ classdef BATCH_FACTORY < handle
         
         %% Paths assignment to workers
         function assign_training_paths(obj,which_queue_id)
-            from = obj.train_objects_pos;
-            to   = obj.train_objects_pos + obj.net_structure.train_batch_size;
-            obj.train_objects_pos = to;
-            obj.train_curr_paths{which_queue_id} = obj.train_objects(from+1:to);
+            %from = obj.train_objects_pos;
+            %to   = obj.train_objects_pos + obj.net_structure.train_batch_size;
+            %obj.train_objects_pos = to;
+            %obj.train_curr_paths{which_queue_id} = obj.train_objects(from+1:to);
+            for i=obj.net_structure.train_batch_size:-1:1
+                local_array(i,1)=obj.train_objects_pool{obj.train_objects_class_idx}(1);
+                
+                obj.train_objects_pool{obj.train_objects_class_idx}(1)=[]; %remove used samples
+                if isempty(obj.train_objects_pool{obj.train_objects_class_idx})
+                    num = length(obj.train_objects{obj.train_objects_class_idx});
+                    rand_idxs  = randperm(num,num);
+                    obj.train_objects_pool{obj.train_objects_class_idx}=obj.train_objects{obj.train_objects_class_idx}(rand_idxs);
+                end
+                
+                obj.train_objects_class_idx = obj.train_objects_class_idx +1;
+                if obj.train_objects_class_idx>length(obj.train_objects_pool)
+                    obj.train_objects_class_idx = 1;
+                end
+            end
+            obj.train_curr_paths{which_queue_id}=local_array;
         end
         
         function assign_validation_work(obj,which_queue_id)
@@ -216,7 +284,7 @@ classdef BATCH_FACTORY < handle
         end
 
         function out = prepare_validation_batch(obj)            
-            obj.validation_objects_pos = 1;
+            obj.validation_objects_pos = 0;
             %Initial assumption - we are assuming that validation_batch_size is less than total validation objects.
             for i=1:obj.validation_queue_size
                 obj.assign_validation_work(i);

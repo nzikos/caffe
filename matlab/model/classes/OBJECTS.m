@@ -55,7 +55,7 @@ classdef OBJECTS < handle
             APP_LOG('info','Objects filepaths indexer saved succesfully!');            
         end        
         %% LOAD OBJECTS
-        function obj = load_objects(obj,obj_file)
+        function load_objects(obj,obj_file)
             APP_LOG('header','Loading Objects filepaths indexer from %s',obj_file);
             load(obj_file);
             obj.data         = this.data;
@@ -66,7 +66,7 @@ classdef OBJECTS < handle
             APP_LOG('info','Objects filepaths indexer loaded succesfully!');
         end
         %% BUILD OBJECTS
-        function obj = build_objects(obj,set,meta,paths,contest)
+        function build_objects(obj,set,meta,paths,contest)
             obj.data = build_objs(set,meta,paths,obj.dims,contest);
             if obj.get_mean_std
                 APP_LOG('info','Extracting mean and standard deviation from training samples...');

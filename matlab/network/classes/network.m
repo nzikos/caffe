@@ -30,12 +30,11 @@ classdef network < handle
         validation_mean_topk_line   = animatedline('Color',[0.0039 0.1961 0.1255],'Marker','*','LineStyle','-');
         
         iter;
-        epoch;
+%        epoch;
 
-        iters_per_epoch;
+%        iters_per_epoch;
         iters_per_display;
         iters_per_val;
-        iters_passed;
         
         max_iterations;
         exit;
@@ -53,15 +52,14 @@ classdef network < handle
             net.train                    = [];
             net.validation               = [];
             net.iter                     = 0;
-            net.epoch                    = 0;
-            net.iters_per_epoch          = [];
+%            net.epoch                    = 0;
+%           net.iters_per_epoch          = [];
             net.iters_per_val            = [];   
             net.max_iterations           = [];
             net.snapshot_path            = [];
             net.snapshot_time_in_minutes = 60;
             net.exit                     = EXIT_HANDLER();
             net.time_per_iter            = 0;
-            net.iters_passed             = 0;
         end
         
         %% SETTERS
@@ -89,12 +87,15 @@ classdef network < handle
               
         function net = set_batches_per_iter(net,batches_per_iter)
             net.train.set_batches_per_iter(batches_per_iter);
-            net.iters_per_epoch  = floor(length(net.caffe.batch_factory.train_objects)/(batches_per_iter*net.caffe.structure.train_batch_size));
+%           net.iters_per_epoch  = floor(length(net.caffe.batch_factory.train_objects)/(batches_per_iter*net.caffe.structure.train_batch_size));
         end
         
-        function net = set_validations_per_epoch(net,vals_per_epoch)
-            net.iters_per_val    = round(net.iters_per_epoch/vals_per_epoch);
-        end
+%         function net = set_validations_per_epoch(net,vals_per_epoch)
+%             net.iters_per_val    = round(net.iters_per_epoch/vals_per_epoch);
+%         end
+        function net = set_validation_interval(net,interval)
+            net.iters_per_val    = interval;
+        end        
         
         function net = set_max_iterations(net,max_iters)
             net.max_iterations = max_iters;
@@ -147,7 +148,8 @@ classdef network < handle
                 
                 net.print_state(0);
 
-                if ~mod(net.iter,net.iters_per_val) || net.iter==net.iters_per_epoch
+%                if ~mod(net.iter,net.iters_per_val) || net.iter==net.iters_per_epoch
+                if ~mod(net.iter,net.iters_per_val)
                     net.print_state(1);
                     APP_LOG('header','Validating');
                     net.caffe.set_phase('validation');
@@ -157,10 +159,10 @@ classdef network < handle
                     net.caffe.set_phase('train');
                 end
 
-                if net.iter>=net.iters_per_epoch
-                    net.iter=0;
-                    net.epoch=net.epoch+1;
-                end
+%                 if net.iter>=net.iters_per_epoch
+%                     net.iter=0;
+%                     net.epoch=net.epoch+1;
+%                 end
                 
                 stop_train=net.exit.read_flag();
                 stop_train=stop_train || (length(net.train.error) > net.max_iterations);
@@ -193,8 +195,9 @@ classdef network < handle
         function print_state(net,force_print)
             if ~mod(net.iter,net.iters_per_display) || force_print
                 
-                max_epochs=floor(net.max_iterations/net.iters_per_epoch);
-                APP_LOG('info','iter: %d/%d | epoch: %d/%d | pool: %d remaining objects',net.iter,net.iters_per_epoch,net.epoch,max_epochs,length(net.caffe.batch_factory.train_objects)-(net.caffe.batch_factory.train_objects_pos-1));
+%                max_epochs=floor(net.max_iterations/net.iters_per_epoch);
+%                APP_LOG('info','iter: %d/%d | epoch: %d/%d | pool: %d remaining objects',net.iter,net.iters_per_epoch,net.epoch,max_epochs,length(net.caffe.batch_factory.train_objects)-net.caffe.batch_factory.train_objects_pos);
+                APP_LOG('info','iter: %d | pool: %d remaining objects',net.iter,length(net.caffe.batch_factory.train_objects)-net.caffe.batch_factory.train_objects_pos);
                 
                 if(net.train.compute_train_error)
                     mean_error=mean(net.train.error(end-net.iters_per_display+1:end));                
@@ -226,9 +229,8 @@ classdef network < handle
             t_net.train                    = net.train;
             t_net.validation               = net.validation;
             t_net.iter                     = net.iter;
-            t_net.iters_passed             = net.iters_passed;
-            t_net.epoch                    = net.epoch;
-            t_net.iters_per_epoch          = net.iters_per_epoch;
+%            t_net.epoch                    = net.epoch;
+%            t_net.iters_per_epoch          = net.iters_per_epoch;
             t_net.iters_per_display        = net.iters_per_display;
             t_net.iters_per_val            = net.iters_per_val;
             t_net.max_iterations           = net.max_iterations;
@@ -249,9 +251,8 @@ classdef network < handle
             net.validation               = t_net.validation;
             APP_LOG('info','Loading parameters...');
             net.iter                     = t_net.iter;
-            net.iters_passed             = t_net.iters_passed;
-            net.epoch                    = t_net.epoch;
-            net.iters_per_epoch          = t_net.iters_per_epoch;
+%            net.epoch                    = t_net.epoch;
+%            net.iters_per_epoch          = t_net.iters_per_epoch;
             net.iters_per_display        = t_net.iters_per_display;
             net.iters_per_val            = t_net.iters_per_val;
             net.max_iterations           = t_net.max_iterations;
@@ -261,10 +262,13 @@ classdef network < handle
             APP_LOG('info','Initializing Caffe with last saved weights...');
             net.caffe.init('train');
 
-            APP_LOG('info','Loading validation plot...');                 
-            addpoints(net.validation_error_line,1:length(net.validation.error),net.validation.error);
-            addpoints(net.validation_top1_line,1:length(net.validation.top1),net.validation.top1);
-            addpoints(net.validation_topk_line,1:length(net.validation.topk),net.validation.topk);
+            APP_LOG('info','Loading validation plot...');
+            addpoints(net.validation_error_line,2:length(net.validation.overall),[net.validation.overall(2:end).error]);
+            addpoints(net.validation_mean_error_line,2:length(net.validation.average),[net.validation.average(2:end).error]);
+            addpoints(net.validation_top1_line,2:length(net.validation.overall),[net.validation.overall(2:end).top1]);
+            addpoints(net.validation_mean_top1_line,2:length(net.validation.average),[net.validation.average(2:end).top1]);
+            addpoints(net.validation_topk_line,2:length(net.validation.overall),[net.validation.overall(2:end).topk]);
+            addpoints(net.validation_mean_topk_line,2:length(net.validation.average),[net.validation.average(2:end).topk]);
             APP_LOG('info','Snapshot load completed');
         end
     end 

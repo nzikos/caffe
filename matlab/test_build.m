@@ -4,36 +4,17 @@ imdb  = fullfile('/','media','alexis','SSD','IMDB'); %Must contain 2 subfolders 
 cache = fullfile('/','media','alexis','SSD','CACHE');
 dims.(sets{1}) = [256 256];
 dims.(sets{2}) = [227 227];
-
 contest.name = 'ILSVRC';
-
 
 model = extraction_model();
 model.set_sets(sets);
 model.set_paths(meta,imdb,cache);
 model.paths.print_paths();
 model.set_contest(contest);
-
-try
-    model.load_metadata();
-catch err
-    APP_LOG('warning','%s',err.message);
-    model.build_metadata();
-    model.check_metadata();
-    model.save_metadata();
-end
-
-% model.print_metadata();
-
 model.objects.set_dims(dims);
-model.objects.compute_mean_std(1);
-try
-	model.load_objects();
-catch err
-    APP_LOG('warning','%s',err.message);
-    model.build_objects();
-    model.save_objects();
-end
+model.objects.compute_mean_std(0);
+
+model.load_objects();
 
 net = network();
 net.set_model(model);
@@ -41,7 +22,7 @@ clear model;
 
 %caffe---------------------------------------------------------
 net.caffe.set_use_gpu(1,0);                                % (enable/disable, device_id) device_id is zero-based
-net.caffe.structure.set_batch_size('train',128);
+net.caffe.structure.set_batch_size('train',200);
 net.caffe.structure.set_batch_size('validation',128);
 net.caffe.structure.set_batch_size('test',10);
 net.caffe.structure.set_input_object_dims(3,227,227);
@@ -88,7 +69,9 @@ net.caffe.batch_factory.normalize_batches(0);                %[X - E(D)]/std(D)
 %caffe---------------------------------------------------------
 
 net.set_batches_per_iter(1);                  %How many batches to perform 1 weight update 
-net.set_validations_per_epoch(2);
+
+%net.set_validations_per_epoch(40);
+net.set_validation_interval(3700);
 
 %net.train.set_constant_layers(1);             %[1 2 3 4 5] for multiple constant layers
 
@@ -99,10 +82,10 @@ net.train.method.set_params({0.01,0.9,0.1,0.0005,4,1});
 %net.train.method.set_params({0.01,0.9,0.1,100000,0.0005});
 
 net.validation.set_k(5);
-net.validation.set_best_target('Average','error')
+net.validation.set_best_target('Average','top1')
 %net.set_max_iterations(350000); %STOP parameter - What is the maximum size of iterations to trigger a stop
 net.set_max_iterations(inf);                     %STOP parameter - What is the maximum size of epochs to trigger a stop
 net.set_snapshot_time(8*60);                     %Save a snapshot of the net every (time in minutes)
-net.set_display(1);                              %Display training stats every x iterations
-net.set_compute_train_error(0);                  %Enable(1)/Disable(0) computation of train error to increase speed in case of latency due to caffe
+net.set_display(200);                            %Display training stats every x iterations
+net.set_compute_train_error(1);                  %Enable(1)/Disable(0) computation of train error to increase speed in case of latency due to caffe
 net.start();

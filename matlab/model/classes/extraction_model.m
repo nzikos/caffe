@@ -52,31 +52,26 @@ classdef extraction_model < handle
             model.contest  = CONTEST(contest);            
         end
 %% METADATA HANDLERS
-        function build_metadata(model)
-            model.metadata = model.metadata.build_metadata(model.paths,model.contest,model.sets.set);
-        end
-        function check_metadata(model)
-            model.metadata.check(model.sets.set);
-        end
         function print_metadata(model)
             model.metadata.print(model.sets.set,model.contest.class_names_map);
-        end
-        function load_metadata(model)
-            model.metadata = model.metadata.load_metadata(model.paths.meta_file);
-        end
-        function save_metadata(model)
-            model.metadata.save_metadata(model.paths.meta_file);
-        end
-        
+        end        
 %% OBJECTS HANDLERS
-        function build_objects(model)
-            model.objects = model.objects.build_objects(model.sets.set,model.metadata,model.paths,model.contest);
-        end
         function load_objects(model)
-            model.objects = model.objects.load_objects(model.paths.objects_file);
-        end
-        function save_objects(model)
-            model.objects.save_objects(model.paths.objects_file);
+            try
+            	model.objects.load_objects(model.paths.objects_file);
+            catch err
+                APP_LOG('warning','%s',err.message);
+                try
+                    model.metadata.load_metadata(model.paths.meta_file);
+                catch err
+                    APP_LOG('warning','%s',err.message);
+                    model.metadata.build_metadata(model.paths,model.contest,model.sets.set);
+                    model.metadata.check(model.sets.set);
+                    model.metadata.save_metadata(model.paths.meta_file);
+                end
+                model.objects.build_objects(model.sets.set,model.metadata,model.paths,model.contest);
+                model.objects.save_objects(model.paths.objects_file);
+            end
         end
     end
 end

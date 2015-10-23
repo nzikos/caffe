@@ -197,16 +197,18 @@ classdef network < handle
                 
 %                max_epochs=floor(net.max_iterations/net.iters_per_epoch);
 %                APP_LOG('info','iter: %d/%d | epoch: %d/%d | pool: %d remaining objects',net.iter,net.iters_per_epoch,net.epoch,max_epochs,length(net.caffe.batch_factory.train_objects)-net.caffe.batch_factory.train_objects_pos);
-                APP_LOG('info','iter: %d | pool: %d remaining objects',net.iter,length(net.caffe.batch_factory.train_objects)-net.caffe.batch_factory.train_objects_pos);
-                
-                if(net.train.compute_train_error)
-                    mean_error=mean(net.train.error(end-net.iters_per_display+1:end));                
-                    APP_LOG('info','error: %1.8f',mean_error);
-                end
 
                 mean_time_per_iter = net.time_per_iter/net.iters_per_display;
-                net.time_per_iter = 0;
-                APP_LOG('debug','Mean time per iteration: %6.2f ms',mean_time_per_iter*1000);
+
+                if(net.train.compute_train_error)
+                    mean_error=mean(net.train.error(end-net.iters_per_display+1:end));                
+                    APP_LOG('info','iter: %d | Mean time %6.2f ms |error: %1.8f',net.iter,mean_time_per_iter*1000,mean_error);
+                else
+                    APP_LOG('info','iter: %d | Mean time %6.2f ms',net.iter,mean_time_per_iter*1000);
+                end
+                
+                net.time_per_iter = 0;                              
+                
             end
         end     
         

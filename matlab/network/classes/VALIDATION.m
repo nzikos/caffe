@@ -118,7 +118,7 @@ classdef VALIDATION < handle
         end            
         
         function save_best_model(val)
-                    model.weights         = val.caffe.get.weights();
+                    model.params          = val.caffe.get.params();
                     model.structure       = val.caffe.structure;
                     model.labels          = val.caffe.labels;
                     model.per_class_stats = val.per_class_stats;

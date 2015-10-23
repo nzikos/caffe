@@ -122,8 +122,8 @@ methods
         if(train.compute_train_error)
             train.error(end+1)=current_error/train.batches_per_iter;
         end
-        %% UPDATE WEIGHTS
-        train.method.update_weights(train.const_layers,sum_grads,train.batches_per_iter);
+        %% UPDATE PARAMS
+        train.method.update_params(train.const_layers,sum_grads,train.batches_per_iter);
     end
 end
 end

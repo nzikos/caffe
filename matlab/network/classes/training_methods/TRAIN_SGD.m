@@ -22,12 +22,12 @@ classdef TRAIN_SGD < handle
 %           obj.Vt         = obj.caffe.zero_struct;
             for i=1:obj.caffe.structure.n_layers
                 for j=1:2
-                    obj.Vt(i).weights{j}=zeros(size(obj.caffe.weights(i).weights{j}));
+                    obj.Vt(i).params{j}=zeros(size(obj.caffe.params(i).params{j}));
                 end
             end
             obj.curr_steps = 1;
         end
-        function obj = set_params(obj,options)          
+        function obj = set_learning_params(obj,options)          
             switch (length(options))
                 case 1 %lr
                     obj.lr      = options{1};
@@ -58,7 +58,7 @@ classdef TRAIN_SGD < handle
             end
         end
         
-        function update_weights(obj,const_layers,sum_grads,bpi)
+        function update_params(obj,const_layers,sum_grads,bpi)
             if ~mod(obj.curr_steps+1,obj.stepsize)
                 APP_LOG('info','SGD changes learning rate from %f to %f',obj.lr,obj.lr*obj.gamma);
 %               APP_LOG('info','SGD changes momentum rate from %f to %f',obj.m,obj.m*obj.gamma + 1 - obj.gamma);
@@ -90,17 +90,17 @@ classdef TRAIN_SGD < handle
             lr_mult = obj.caffe.structure.lr_mult;
             for i=1:obj.caffe.structure.n_layers
                 if isempty(find(const_layers==i,1))
-                    for j=1:length(obj.caffe.weights(i).weights) %weight + bias / weights
+                    for j=1:length(obj.caffe.params(i).blob) %weight + bias / weights
                         %local_lr = lr * local_lr_mult;
                         %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
                         local_lr = obj.lr * lr_mult{i,j};
-                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - (local_lr/bpi) * sum_grads(i).blob{j} - obj.wd*local_lr*obj.caffe.weights(i).weights{j};
-                        obj.caffe.weights(i).weights{j}=obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
+                        obj.Vt(i).blob{j}=obj.m * obj.Vt(i).blob{j} - (local_lr/bpi) * sum_grads(i).blob{j} - obj.wd*local_lr*obj.caffe.params(i).blob{j};
+                        obj.caffe.params(i).blob{j}=obj.caffe.params(i).blob{j}+obj.Vt(i).blob{j};
                     end
                 end
             end
             clear grads;
-            obj.caffe.set.weights();
+            obj.caffe.set.params();
             obj.curr_steps=obj.curr_steps+1;
         end
     end

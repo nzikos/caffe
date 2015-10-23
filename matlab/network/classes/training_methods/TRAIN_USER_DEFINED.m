@@ -45,12 +45,12 @@ classdef TRAIN_USER_DEFINED < handle
         function init(obj)
              for i=1:obj.caffe.structure.n_layers
                  for j=1:2
-                     obj.Vt(i).weights{j}=zeros(size(obj.caffe.weights(i).weights{j}));
+                     obj.Vt(i).blob{j}=zeros(size(obj.caffe.params(i).blob{j}));
                  end
              end
         end
         
-        function set_params(obj,options)          
+        function set_learning_params(obj,options)          
             switch (length(options))
                 case 3 %lr
                     obj.lr      = options{1};
@@ -85,7 +85,7 @@ classdef TRAIN_USER_DEFINED < handle
             end
         end
         
-        function update_weights(obj,const_layers,sum_grads,bpi)
+        function update_params(obj,const_layers,sum_grads,bpi)
             if obj.curr_val_idx < length(obj.validation.average)
                 obj.curr_val_idx=obj.curr_val_idx+1;
                 if ~obj.validation.found_new_best
@@ -118,17 +118,17 @@ classdef TRAIN_USER_DEFINED < handle
             lr_mult = obj.caffe.structure.lr_mult;
             for i=1:obj.caffe.structure.n_layers
                 if isempty(find(const_layers==i,1))
-                    for j=1:length(obj.caffe.weights(i).weights) %weight + bias / weights
+                    for j=1:length(obj.caffe.params(i).blob) %weight + bias / weights
                         %local_lr = lr * local_lr_mult;
                         %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
                         local_lr = obj.lr * lr_mult{i,j};
-                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - (local_lr/bpi) * sum_grads(i).blob{j} - obj.wd*local_lr*obj.caffe.weights(i).weights{j};
-                        obj.caffe.weights(i).weights{j}=obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
+                        obj.Vt(i).blob{j}=obj.m * obj.Vt(i).blob{j} - (local_lr/bpi) * sum_grads(i).blob{j} - obj.wd*local_lr*obj.caffe.params(i).blob{j};
+                        obj.caffe.params(i).blob{j}=obj.caffe.params(i).blob{j}+obj.Vt(i).blob{j};
                     end
                 end
             end
             clear grads;
-            obj.caffe.set.weights();
+            obj.caffe.set.params();
         end
     end
     

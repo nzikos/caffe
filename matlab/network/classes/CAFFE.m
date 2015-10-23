@@ -8,7 +8,7 @@ classdef CAFFE < handle
     %
     %   set.phase.train -> Change caffe phase to train
     %   set.phase.test  -> Change caffe phase to test
-    %   set.weights     -> Sets the weights from this class to the caffe 
+    %   set.params      -> Sets the weights and bias from this class to Caffe 
     %                      GPU or CPU memory. Depends where caffe is running.
     %   set.input       -> Sends a batch of images with their labels to caffe.
     %   set.device      -> In case of GPU usage and multiple GPU system 
@@ -16,7 +16,7 @@ classdef CAFFE < handle
     %
     %%  get     : Contains all the get functions
     %
-    %   get.weights        -> Retrieve the weights from caffe.
+    %   get.params         -> Retrieve the weights and bias from caffe.
     %   get.output(x)      -> Retrieve the output of layer x from caffe. 
     %                         Depends upon network structure.
     %   get.grads          -> Retrieve grads computed through a backward 
@@ -43,7 +43,7 @@ classdef CAFFE < handle
     %
     % structure           : The network structure
     %       
-    % weights             : The network weights as returned by caffe
+    % params              : The network weights and bias as returned by caffe
     %
     % labels              : Array containing the labels that this network 
     %                       will be able to classify. [Name, contestID]
@@ -67,19 +67,19 @@ classdef CAFFE < handle
         test_prototxt       = [];
     end
     properties (SetAccess = public)
-        weights             = [];
+        params              = [];
         labels              = [];        
     end
     methods
         %% INIT 
         function obj = CAFFE(prototxt_path)
             %CAFFE SETTERS HANDLERS
-            obj.set.weights             = @()caffe('set_weights',obj.weights);
+            obj.set.params              = @()caffe('set_params',obj.params);
             obj.set.input               = @(batch)caffe('upload_input',batch);
             %CAFFE GETTERS HANDLERS
-            obj.get.weights             = @()caffe('get_weights');
+            obj.get.params              = @()caffe('get_params');
             obj.get.output              = @()caffe('download_output');
-            obj.get.grads               = @()caffe('get_grads');
+            obj.get.gradients           = @()caffe('get_gradients');
             obj.get.is_initialized      = @()caffe('is_initialized');
             obj.get.blobs_number        = @()caffe('get_blobs_number');
             obj.get.blob                = @(i)caffe('get_blob',i);
@@ -137,8 +137,8 @@ classdef CAFFE < handle
                 otherwise
                     APP_LOG('last_error','Invalid phase. Expected train/validation/test, got %s',phase);
             end
-            if ~isempty(obj.weights)
-                obj.set.weights();
+            if ~isempty(obj.params)
+                obj.set.params();
             end
         end
         
@@ -147,7 +147,8 @@ classdef CAFFE < handle
                 obj.labels(i).name      = arg_dataset(i).labels.name;
                 obj.labels(i).contestID = arg_dataset(i).labels.contestID;
             end
-        end
+       end
+        
         function set_structure(obj,arg_structure)
             if strcmp(class(arg_structure),'NET_STRUCTURE')
                 obj.structure = arg_structure;
@@ -155,6 +156,7 @@ classdef CAFFE < handle
                 APP_LOG('last_error','Expected object of class "NET_STRUCTURE"');
             end
         end
+        
         function reset_object_input(obj,phase,object_input_size)
             switch(phase)
                 case 'train'
@@ -179,11 +181,11 @@ classdef CAFFE < handle
 
         function set_layer(obj,layer_id,init_weights,init_bias)
             if obj.get.is_initialized()
-                obj.weights  = obj.get.weights();
-                obj.weights(layer_id).weights{1}=single(init_weights);
-                obj.weights(layer_id).weights{2}=single(repmat(init_bias,size(obj.weights(layer_id).weights{2})));
+                obj.params                   = obj.get.params();
+                obj.params(layer_id).blob{1} = single(init_weights);
+                obj.params(layer_id).blob{2} = single(repmat(init_bias,size(obj.params(layer_id).blob{2})));
 
-                obj.set.weights();
+                obj.set.params();
             else
                 APP_LOG('last_error','Initialize caffe before initiallizing a layer');
             end
@@ -205,10 +207,10 @@ classdef CAFFE < handle
                 caffe('set_mode_cpu');
             end
             
-            if isempty(obj.weights)                 %If no weights loaded / clean start scenario
-                obj.weights  = obj.get.weights();
-            else                                    %If net has loaded weights / restore a previous execution
-                obj.set.weights();
+            if isempty(obj.params)                 %If no params loaded / clean start scenario
+                obj.params  = obj.get.params();
+            else                                    %If net has loaded params / restore a previous execution
+                obj.set.params();
             end
         end
 	end

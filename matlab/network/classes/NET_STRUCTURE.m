@@ -638,7 +638,7 @@ classdef NET_STRUCTURE < handle
         function WRITE_TO_FILE(structure,fileID,fmt,varargin)
             fprintf(fileID,[fmt '\n'],varargin{:});
             %fprintf([fmt '\n'],varargin{:});
-            APP_LOG('debug',fmt,varargin{:});
+            %APP_LOG('debug',fmt,varargin{:});
         end
     end
     

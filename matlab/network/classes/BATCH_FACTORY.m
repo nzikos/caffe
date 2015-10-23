@@ -74,7 +74,6 @@ classdef BATCH_FACTORY < handle
                 
         train_objects          = [];
         train_objects_pool     = [];
-        train_objects_class_idx= 1;
         train_objects_pos      = 0;
         validation_objects     = [];
         validation_objects_pos = 0;
@@ -184,18 +183,14 @@ classdef BATCH_FACTORY < handle
             %obj.train_objects_pos = to;
             %obj.train_curr_paths{which_queue_id} = obj.train_objects(from+1:to);
             for i=obj.net_structure.train_batch_size:-1:1
-                local_array(i,1)=obj.train_objects_pool{obj.train_objects_class_idx}(1);
+                class_idx = ceil(rand(1,1)*length(obj.train_objects_pool));
+                local_array(i,1)=obj.train_objects_pool{class_idx}(1);
                 
-                obj.train_objects_pool{obj.train_objects_class_idx}(1)=[]; %remove used samples
-                if isempty(obj.train_objects_pool{obj.train_objects_class_idx})
-                    num = length(obj.train_objects{obj.train_objects_class_idx});
+                obj.train_objects_pool{class_idx}(1)=[]; %remove used sample
+                if isempty(obj.train_objects_pool{class_idx})
+                    num = length(obj.train_objects{class_idx});
                     rand_idxs  = randperm(num,num);
-                    obj.train_objects_pool{obj.train_objects_class_idx}=obj.train_objects{obj.train_objects_class_idx}(rand_idxs);
-                end
-                
-                obj.train_objects_class_idx = obj.train_objects_class_idx +1;
-                if obj.train_objects_class_idx>length(obj.train_objects_pool)
-                    obj.train_objects_class_idx = 1;
+                    obj.train_objects_pool{class_idx}=obj.train_objects{class_idx}(rand_idxs);
                 end
             end
             obj.train_curr_paths{which_queue_id}=local_array;

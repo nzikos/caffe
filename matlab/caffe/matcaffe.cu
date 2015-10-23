@@ -288,7 +288,7 @@ static void forward_backward(MEX_ARGS) {
 
 
 
-//--------API CALL 'get_weights'-----------------------------------------------
+//--------API CALL 'get_params'-----------------------------------------------
 //PURPOSE:
 //	RETURN WEIGHTS & BIAS OF LAYERS
 //ARGUMENTS:
@@ -296,10 +296,10 @@ static void forward_backward(MEX_ARGS) {
 //RETURNS:
 //	CELL OF STRUCTS OF NETWORK WEIGHTS & BIAS
 //-----------------------------------------------------------------------------
-static mxArray* do_get_weights() {
+static mxArray* do_get_params() {
 	const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
 	const vector<string>& layer_names = net_->layer_names();
-	// Step 1: count the number of layers with weights
+	// Step 1: count the number of layers with params
 	int num_layers = 0;
 
 	string prev_layer_name = "";
@@ -318,10 +318,10 @@ static mxArray* do_get_weights() {
 	mxArray* mx_layers;
 
 	const mwSize dims[2] = {num_layers, 1};
-	const char* fnames[2] = {"weights", "layer_names"};
+	const char* fnames[2] = {"blob", "name"};
 	mx_layers = mxCreateStructArray(2, dims, 2, fnames);
 
-	// Step 3: copy weights into output
+	// Step 3: copy params into output
 	prev_layer_name = "";
 	int mx_layer_index = 0;
 	for (unsigned int i = 0; i < layers.size(); ++i) {
@@ -334,8 +334,8 @@ static mxArray* do_get_weights() {
 			prev_layer_name = layer_names[i];
 			const mwSize dims[2] = {static_cast<mwSize>(layer_blobs.size()), 1};
 			mx_layer_cells = mxCreateCellArray(2, dims);
-			mxSetField(mx_layers, mx_layer_index, "weights", mx_layer_cells);
-			mxSetField(mx_layers, mx_layer_index, "layer_names",mxCreateString(layer_names[i].c_str()));
+			mxSetField(mx_layers, mx_layer_index, "blob", mx_layer_cells);
+			mxSetField(mx_layers, mx_layer_index, "name",mxCreateString(layer_names[i].c_str()));
 			mx_layer_index++;
 		}
 		for (unsigned int j = 0; j < layer_blobs.size(); ++j) {
@@ -343,17 +343,17 @@ static mxArray* do_get_weights() {
 			// where width is the fastest dimension
 			mwSize dims[4] = {layer_blobs[j]->width(), layer_blobs[j]->height(),layer_blobs[j]->channels(), layer_blobs[j]->num()};
 			if(Caffe::mode()==Caffe::CPU){
-				mxArray* mx_weights = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
-				mxSetCell(mx_layer_cells, j, mx_weights);
-				float* weights_ptr = reinterpret_cast<float*>(mxGetPr(mx_weights));				
-				caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->cpu_data(),weights_ptr);
+				mxArray* mx_params = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
+				mxSetCell(mx_layer_cells, j, mx_params);
+				float* params_ptr = reinterpret_cast<float*>(mxGetPr(mx_params));				
+				caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->cpu_data(),params_ptr);
 			}
 			else if(Caffe::mode()==Caffe::GPU){
-				mxGPUArray *mx_weights = mxGPUCreateGPUArray(4, dims, mxSINGLE_CLASS, mxREAL,MX_GPU_DO_NOT_INITIALIZE);
-				float* weights_ptr = (float *)(mxGPUGetData(mx_weights));
-				caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->gpu_data(),weights_ptr);
-				mxSetCell(mx_layer_cells, j, mxGPUCreateMxArrayOnGPU(mx_weights));
-				mxGPUDestroyGPUArray(mx_weights);
+				mxGPUArray *mx_params = mxGPUCreateGPUArray(4, dims, mxSINGLE_CLASS, mxREAL,MX_GPU_DO_NOT_INITIALIZE);
+				float* params_ptr = (float *)(mxGPUGetData(mx_params));
+				caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->gpu_data(),params_ptr);
+				mxSetCell(mx_layer_cells, j, mxGPUCreateMxArrayOnGPU(mx_params));
+				mxGPUDestroyGPUArray(mx_params);
 			}
 			else
 				mex_error("Unknown Caffe mode");
@@ -361,22 +361,22 @@ static mxArray* do_get_weights() {
 	}
 	return mx_layers;
 }
-static void get_weights(MEX_ARGS){
-	plhs[0] = do_get_weights();
+static void get_params(MEX_ARGS){
+	plhs[0] = do_get_params();
 }
 
 
 
-//--------API CALL 'do_set_weights'--------------------------------------------
+//--------API CALL 'do_set_params'--------------------------------------------
 //PURPOSE:
 //	-SETS WEIGHTS AND BIAS OF THE NETWORK LAYERS
 //ARGUMENTS:
-//	-CELL OF STRUCTS WITH THE SAME STRUCTURE AS 'get_weights' RETURNED 
+//	-CELL OF STRUCTS WITH THE SAME STRUCTURE AS 'get_params' RETURNED 
 //	OBJECT
 //RETURNS:
 //	-NOTHING-
 //-----------------------------------------------------------------------------
-static void do_set_weights(const mxArray* mx_layers) {
+static void do_set_params(const mxArray* mx_layers) {
 	const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
 	const vector<string>& layer_names = net_->layer_names();
 
@@ -385,23 +385,23 @@ static void do_set_weights(const mxArray* mx_layers) {
 	for (unsigned int i = 0; i < input_layer_num; ++i){
 
 		// Step 1: get input layer information
-		mxArray *mx_layer_name = mxGetField(mx_layers, i, "layer_names");
+		mxArray *mx_layer_name = mxGetField(mx_layers, i, "name");
 		if (mx_layer_name == NULL){
-			mexPrintf("layer %d has no field ""layer_names"", ignore\n", i);
+			mexPrintf("layer %d has no field ""name"", ignore\n", i);
 			continue;
 		}
 		char *layer_name = mxArrayToString(mx_layer_name);
-		mxArray *mx_weights_cell = mxGetField(mx_layers, i, "weights");
-		if (mx_weights_cell == NULL){
-			mexPrintf("layer %d has no field ""weights"", ignore\n", i);
+		mxArray *mx_params_cell = mxGetField(mx_layers, i, "blob");
+		if (mx_params_cell == NULL){
+			mexPrintf("layer %d has no field ""blob"", ignore\n", i);
 			continue;
 		}
-		if (!mxIsCell(mx_weights_cell))
+		if (!mxIsCell(mx_params_cell))
 		{
-			mexPrintf("layer %d field ""weights"" is not cell, ignore\n", i);
+			mexPrintf("layer %d field ""blob"" is not cell, ignore\n", i);
 			continue;
 		}
-		unsigned int weight_blob_num = mxGetNumberOfElements(mx_weights_cell);
+		unsigned int weight_blob_num = mxGetNumberOfElements(mx_params_cell);
 
 		// Step 2: scan model layers, and try to set layer
 		string prev_layer_name = "";
@@ -417,9 +417,9 @@ static void do_set_weights(const mxArray* mx_layers) {
 			}
 			for (unsigned int k = 0; k < layer_blobs.size(); ++k) {
 				if(Caffe::mode()==Caffe::CPU){
-					mxArray *mx_weights = mxGetCell(mx_weights_cell, k);
-					const mwSize* input_blob_dims = mxGetDimensions(mx_weights);
-					int dim_num = mxGetNumberOfDimensions(mx_weights);
+					mxArray *mx_params = mxGetCell(mx_params_cell, k);
+					const mwSize* input_blob_dims = mxGetDimensions(mx_params);
+					int dim_num = mxGetNumberOfDimensions(mx_params);
 					size_t input_dims[4] = {1, 1, 1, 1};
 					for (int idim = 0; idim < dim_num; ++idim)
 						input_dims[idim] = input_blob_dims[idim];
@@ -427,20 +427,20 @@ static void do_set_weights(const mxArray* mx_layers) {
 						mexPrintf("%s blobs %d dims don't match, ignore\n", layer_name, k);
 						continue;
 					}
-					float* weights_ptr = reinterpret_cast<float*>(mxGetPr(mx_weights));					
-					caffe_copy(layer_blobs[k]->count(), weights_ptr, layer_blobs[k]->mutable_cpu_data());
+					float* params_ptr = reinterpret_cast<float*>(mxGetPr(mx_params));					
+					caffe_copy(layer_blobs[k]->count(), params_ptr, layer_blobs[k]->mutable_cpu_data());
 				}
 				else if(Caffe::mode()==Caffe::GPU){
-					const mxGPUArray *mx_weights 	= mxGPUCreateFromMxArray(mxGetCell(mx_weights_cell, k));
-					const size_t *input_dims 	= mxGPUGetDimensions(mx_weights);
+					const mxGPUArray *mx_params 	= mxGPUCreateFromMxArray(mxGetCell(mx_params_cell, k));
+					const size_t *input_dims 	= mxGPUGetDimensions(mx_params);
 					
 					if (layer_blobs[k]->width() != (int)input_dims[0] || layer_blobs[k]->height() != (int)input_dims[1] || layer_blobs[k]->channels() != (int)input_dims[2] || layer_blobs[k]->num() != (int)input_dims[3]){
 						mexPrintf("%s blobs %d dims don't match, ignore\n", layer_name, k);
 						continue;
 					}
-					float const* weights_ptr = (float const*)(mxGPUGetDataReadOnly(mx_weights));					
-					caffe_copy(layer_blobs[k]->count(), weights_ptr, layer_blobs[k]->mutable_gpu_data());
-					mxGPUDestroyGPUArray(mx_weights);					
+					float const* params_ptr = (float const*)(mxGPUGetDataReadOnly(mx_params));					
+					caffe_copy(layer_blobs[k]->count(), params_ptr, layer_blobs[k]->mutable_gpu_data());
+					mxGPUDestroyGPUArray(mx_params);					
 				}
 				else{
 					LOG(FATAL) << "Unknown caffe mode: " << Caffe::mode();
@@ -450,7 +450,7 @@ static void do_set_weights(const mxArray* mx_layers) {
 		mxFree(layer_name);
 	}
 }
-static void set_weights(MEX_ARGS) {
+static void set_params(MEX_ARGS) {
 	if (nrhs != 1) {
 		LOG(ERROR) << "Only given " << nrhs << " arguments";
 		mexErrMsgTxt("caffe_mex : Wrong number of arguments");
@@ -463,24 +463,24 @@ static void set_weights(MEX_ARGS) {
 		return;
 	}
 
-	do_set_weights(prhs[0]);
+	do_set_params(prhs[0]);
 }
 
 
 
-//--------API CALL 'get_grads'-------------------------------------------------
+//--------API CALL 'get_gradients'-------------------------------------------------
 //PURPOSE:
-//	RETURNS GRADS COMPUTED BY BACKWARD PROPAGATION OF DATA THROUGH NETWORK
+//	RETURNS gradients COMPUTED BY BACKWARD PROPAGATION OF DATA THROUGH NETWORK
 //ARGUMENTS:
 //	-NOTHING-
 //RETURNS:
-//	CELL OF STRUCTS WITH THE SAME STRUCTURE AS 'get_weights' BUT THIS TIME
-//	IT CONTAINS THE GRADS PRODUCED BY THE BACKWARD PROPAGATION
+//	CELL OF STRUCTS WITH THE SAME STRUCTURE AS 'get_params' BUT THIS TIME
+//	IT CONTAINS THE gradients PRODUCED BY THE BACKWARD PROPAGATION
 //-----------------------------------------------------------------------------
-static mxArray* do_get_grads(){
+static mxArray* do_get_gradients(){
 	const vector<shared_ptr<Layer<float> > >& layers = net_->layers();
 	const vector<string>& layer_names = net_->layer_names();
-	// Step 1: count the number of layers with weights
+	// Step 1: count the number of layers with params
 	int num_layers = 0;
 	string prev_layer_name = "";
 	for (unsigned int i = 0; i < layers.size(); ++i) {
@@ -498,7 +498,7 @@ static mxArray* do_get_grads(){
 	const mwSize dims[2] = {num_layers, 1};
 	const char* fnames[2] = {"blob", "name"};
 	mx_layers = mxCreateStructArray(2, dims, 2, fnames);
-	// Step 3: copy weights into output
+	// Step 3: copy params into output
 	prev_layer_name = "";
 	int mx_layer_index = 0;
 	for (unsigned int i = 0; i < layers.size(); ++i) {
@@ -520,17 +520,17 @@ static mxArray* do_get_grads(){
 			// where width is the fastest dimension
 			mwSize dims[4] = {layer_blobs[j]->width(), layer_blobs[j]->height(),layer_blobs[j]->channels(), layer_blobs[j]->num()};
 			if(Caffe::mode()==Caffe::CPU){
-				mxArray* mx_weights = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
-				mxSetCell(mx_layer_cells, j, mx_weights);
-				float* weights_ptr = reinterpret_cast<float*>(mxGetPr(mx_weights));				
-				caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->cpu_diff(),weights_ptr);
+				mxArray* mx_gradients = mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
+				mxSetCell(mx_layer_cells, j, mx_gradients);
+				float* gradients_ptr = reinterpret_cast<float*>(mxGetPr(mx_gradients));
+				caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->cpu_diff(),gradients_ptr);
 			}
 			else if(Caffe::mode()==Caffe::GPU){
-				mxGPUArray *mx_weights = mxGPUCreateGPUArray(4, dims, mxSINGLE_CLASS, mxREAL,MX_GPU_DO_NOT_INITIALIZE);
-				float* weights_ptr = (float *)(mxGPUGetData(mx_weights));
-				caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->gpu_diff(),weights_ptr);
-				mxSetCell(mx_layer_cells, j, mxGPUCreateMxArrayOnGPU(mx_weights));
-				mxGPUDestroyGPUArray(mx_weights);
+				mxGPUArray *mx_gradients = mxGPUCreateGPUArray(4, dims, mxSINGLE_CLASS, mxREAL,MX_GPU_DO_NOT_INITIALIZE);
+				float* gradients_ptr = (float *)(mxGPUGetData(mx_gradients));
+				caffe_copy(layer_blobs[j]->count(), layer_blobs[j]->gpu_diff(),gradients_ptr);
+				mxSetCell(mx_layer_cells, j, mxGPUCreateMxArrayOnGPU(mx_gradients));
+				mxGPUDestroyGPUArray(mx_gradients);
 			}
 			else
 				mex_error("Unknown Caffe mode");
@@ -538,13 +538,13 @@ static mxArray* do_get_grads(){
 	}
 	return mx_layers;
 }
-static void get_grads(MEX_ARGS) {
+static void get_gradients(MEX_ARGS) {
 	if (nrhs != 0) {
 		ostringstream error_msg;
 		error_msg << "Expected 0 arguments, got " << nrhs;
 		mex_error(error_msg.str());
 	}
-	plhs[0] = do_get_grads();
+	plhs[0] = do_get_gradients();
 }
 
 
@@ -642,9 +642,9 @@ static void get_init_key(MEX_ARGS){
 
 //--------API CALL 'init'------------------------------------------------------
 //PURPOSE:
-//	-INITIALIZE THE NETWORK, SET LAYERS, I/O BLOBS, CONNECTIONS, WEIGHTS
+//	-INITIALIZE THE NETWORK, SET LAYERS, I/O BLOBS, CONNECTIONS, PARAMETERS
 //ARGUMENTS:
-//	-PROTOTXT FILE WITH PARAMS, MODELFILE, PHASE
+//	-PROTOTXT FILE WITH PARAMS, PHASE
 //RETURNS:
 //	-INIT_KEY
 //-----------------------------------------------------------------------------
@@ -704,7 +704,7 @@ static void is_initialized(MEX_ARGS) {
 //--------API CALL: 'training_iter'--------------------------------------------
 //PURPOSE:
 //	PERFORM ONE TRAINING ITERATION:
-//		UPLOAD INPUTS -> FORWARD -> BACKWARD -> GET PRODUCED GRADS
+//		UPLOAD INPUTS -> FORWARD -> BACKWARD -> GET PRODUCED gradients
 //ARGUMENTS:
 //	CELL OF DATA, ONE CELL PER INPUT (e.g. DATA+LABELS = CELL(2,1));
 //RETURNS:
@@ -718,7 +718,7 @@ static void training_iter(MEX_ARGS){
 	}
 	do_upload_input(prhs[0]);
 	do_forward_backward();
-	plhs[0] = do_get_grads();
+	plhs[0] = do_get_gradients();
 }
 
 /** -----------------------------------------------------------------
@@ -740,11 +740,11 @@ static handler_registry handlers[] = {
 	{	"set_mode_gpu",		set_mode_gpu    },
 	{	"set_phase",		set_phase	},
 	{	"set_device",		set_device      },
-	{	"get_weights",		get_weights     },
-	{	"set_weights",		set_weights	},
+	{	"get_params",		get_params     },
+	{	"set_params",		set_params	},
 	{	"upload_input",		upload_input	},
 	{	"download_output",	download_output },
-	{	"get_grads",		get_grads	},
+	{	"get_gradients",	get_gradients	},
 	{	"get_blobs_number",	get_blobs_number},
 	{	"get_blob",		get_blob	},
 	{	"get_init_key",		get_init_key    },

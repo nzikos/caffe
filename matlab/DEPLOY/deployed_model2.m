@@ -114,8 +114,8 @@ classdef deployed_model2 < handle
             
             fileID=fopen([dataset '_results.txt'],'w+');
             
-            %for i=1:length(img_list)
-            for i=1:50
+            for i=1:length(img_list)
+%            for i=1:50
                 APP_LOG('info','Image %d/%d',i,length(img_list));
                 img = imread(img_list{i});
                 if size(img,3)==1 %B&W IMAGES

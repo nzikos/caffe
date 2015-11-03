@@ -50,6 +50,10 @@ classdef extraction_model < handle
         function set_dataset(model,arg_dataset)
             model.dataset  = DATASETS(arg_dataset);            
         end
+%% PATHS HANDLERS
+        function print_paths(model)
+            model.paths.print_paths();
+        end        
 %% METADATA HANDLERS
         function print_metadata(model)
             model.metadata.print(model.sets.set,model.dataset.class_names_map);

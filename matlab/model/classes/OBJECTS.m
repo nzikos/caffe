@@ -50,7 +50,6 @@ classdef OBJECTS < handle
             this.dims         = obj.dims;
             this.mean         = obj.mean;
             this.std          = obj.std;
-            this.get_mean_std = obj.get_mean_std;
             save(obj_file,'this','-v6');
             APP_LOG('info','Objects filepaths indexer saved succesfully!');
         end
@@ -64,7 +63,7 @@ classdef OBJECTS < handle
             obj.std          = this.std;
             APP_LOG('info','Objects filepaths indexer loaded succesfully!');
             if obj.get_mean_std
-                if ~this.get_mean_std
+                if isempty(obj.mean) || isempty(obj.std)
                     obj.mean_and_std_computation_function(set);
                     obj.save_objects(obj_file);
                 end

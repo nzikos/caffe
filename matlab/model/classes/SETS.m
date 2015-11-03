@@ -1,7 +1,7 @@
-classdef SETS
-    %SETS Datasets that will be used. The extraction_model is expecting to
+classdef SETS < handle
+    %Datasets that will be used. The extraction_model is expecting to
     %see the metadata and the images root directories contain two or more 
-    %subfolders with the sets names
+    %subfolders with the sets names under "1-1" relation.
     
     %   AUTHOR: PROVOS ALEXIS
     %   DATE:   19/5/2015

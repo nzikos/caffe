@@ -15,7 +15,8 @@ classdef PATHS
     methods (Hidden = true)
         function obj = PATHS(sets,meta,imdb,cache)
             if strcmp(class(sets),'SETS')
-                obj.sets = SETS(sets.set);
+                %obj.sets = SETS(sets.set);
+                obj.sets = sets;
                 for i=1:length(sets.set)
                     obj.meta.(sets.set{i})=[];
                     obj.imdb.(sets.set{i})=[];

@@ -24,7 +24,7 @@ classdef TRAIN_USER_DEFINED < handle
         validation;
         exit;
         failed_vals = [];
-        failed_vals_threshold= [];        
+        failed_vals_threshold= [];
         failed_lr_changes = [];
         failed_lr_changes_threshold = [];
         curr_val_idx;
@@ -44,8 +44,8 @@ classdef TRAIN_USER_DEFINED < handle
         
         function init(obj)
              for i=1:obj.caffe.structure.n_layers
-                 for j=1:2
-                     obj.Vt(i).blob{j}=zeros(size(obj.caffe.params(i).blob{j}));
+                 for j=1:length(obj.caffe.params(i).data)
+                     obj.Vt(i).data{j}=zeros(size(obj.caffe.params(i).data{j}));
                  end
              end
         end
@@ -85,7 +85,7 @@ classdef TRAIN_USER_DEFINED < handle
             end
         end
         
-        function update_params(obj,const_layers,sum_grads,bpi)
+        function update_params(obj,sum_grads,bpi)
             if obj.curr_val_idx < length(obj.validation.average)
                 obj.curr_val_idx=obj.curr_val_idx+1;
                 if ~obj.validation.found_new_best
@@ -106,25 +106,16 @@ classdef TRAIN_USER_DEFINED < handle
                     obj.failed_lr_changes=0;
                 end
             end
-%             wcoeff= (1-obj.lr*obj.wd);
-%             for i=1:obj.caffe.n_layers
-%                 if isempty(find(const_layers==i,1))
-%                     for j=1:2
-%                         obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - (obj.lr/bpi) * sum_grads(i).blob{j};
-%                         obj.caffe.weights(i).weights{j}=wcoeff*obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
-%                     end
-%                 end
-%             end
-            lr_mult = obj.caffe.structure.lr_mult;
-            for i=1:obj.caffe.structure.n_layers
-                if isempty(find(const_layers==i,1))
-                    for j=1:length(obj.caffe.params(i).blob) %weight + bias / weights
-                        %local_lr = lr * local_lr_mult;
-                        %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
-                        local_lr = obj.lr * lr_mult{i,j};
-                        obj.Vt(i).blob{j}=obj.m * obj.Vt(i).blob{j} - (local_lr/bpi) * sum_grads(i).blob{j} - obj.wd*local_lr*obj.caffe.params(i).blob{j};
-                        obj.caffe.params(i).blob{j}=obj.caffe.params(i).blob{j}+obj.Vt(i).blob{j};
-                    end
+
+            lr_mult      = obj.caffe.structure.lr_mult;
+            n_layers     = obj.caffe.structure.n_layers;
+            for i=1:n_layers
+                for j=1:length(obj.caffe.params(i).data) %weight + bias / weights
+                    %local_lr = lr * local_lr_mult;
+                    %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
+                    local_lr = obj.lr * lr_mult{i,j};
+                    obj.Vt(i).data{j}=obj.m * obj.Vt(i).data{j} - (local_lr/bpi) * sum_grads(i).diff{j} - obj.wd*local_lr*obj.caffe.params(i).data{j};
+                    obj.caffe.params(i).data{j}=obj.caffe.params(i).data{j}+obj.Vt(i).data{j};
                 end
             end
             clear grads;

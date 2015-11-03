@@ -17,9 +17,9 @@ classdef CAFFE < handle
     %%  get     : Contains all the get functions
     %
     %   get.params         -> Retrieve the weights and bias from caffe.
-    %   get.output(x)      -> Retrieve the output of layer x from caffe. 
+    %   get.output         -> Retrieve the output of layer x from caffe. 
     %                         Depends upon network structure.
-    %   get.grads          -> Retrieve grads computed through a backward 
+    %   get.gradients      -> Retrieve gradients computed through a backward 
     %                         propagation of errors.
     %   get.is_initialized -> Returns 1 if already initialized 0 otherwise.
     %
@@ -48,8 +48,6 @@ classdef CAFFE < handle
     % labels              : Array containing the labels that this network 
     %                       will be able to classify. [Name, contestID]
     %
-    % batch_factory       : functions to create a batch per phase.
-    %
     %% AUTHOR: PROVOS ALEXIS
     %  DATE:   20/5/2015
     %  FOR:    VISION TEAM - AUTH
@@ -61,14 +59,13 @@ classdef CAFFE < handle
         use_gpu             = [];
         current_phase       = [];
         structure           = [];
-        batch_factory       = [];
         train_prototxt      = [];
         validation_prototxt = [];
         test_prototxt       = [];
     end
     properties (SetAccess = public)
         params              = [];
-        labels              = [];        
+        labels              = [];
     end
     methods
         %% INIT 
@@ -82,7 +79,8 @@ classdef CAFFE < handle
             obj.get.gradients           = @()caffe('get_gradients');
             obj.get.is_initialized      = @()caffe('is_initialized');
             obj.get.blobs_number        = @()caffe('get_blobs_number');
-            obj.get.blob                = @(i)caffe('get_blob',i);
+            obj.get.blob_data           = @(i)caffe('get_blob_data',i);
+            obj.get.blob_diff           = @(i)caffe('get_blob_diff',i);
             %CAFFE ACTIONS HANDLERS
             obj.action.reset            = @()caffe('reset');
             obj.action.init             = @()caffe('init',obj.train_prototxt,'train');
@@ -91,9 +89,7 @@ classdef CAFFE < handle
             obj.action.backward         = @(diffs)caffe('backward',diffs);
             obj.action.training_iter    = @(batch)caffe('training_iter',batch);
             
-            obj.structure               = NET_STRUCTURE(prototxt_path);            
-            obj.batch_factory           = BATCH_FACTORY(obj.structure);
-            
+            obj.structure               = NET_STRUCTURE(prototxt_path);
             obj.action.reset();
         end
         
@@ -113,8 +109,10 @@ classdef CAFFE < handle
             end
             APP_LOG('info','GPU Device set to %s',g.Name);                        
         end
+        
         function set_phase(obj,phase)
             obj.action.reset();
+            phase=lower(phase);
             switch phase
                 case 'train'
                     if isempty(obj.train_prototxt)
@@ -144,14 +142,27 @@ classdef CAFFE < handle
         
        function set_labels(obj,arg_dataset)
             for i=length(arg_dataset):-1:1
-                obj.labels(i).name      = arg_dataset(i).labels.name;
-                obj.labels(i).contestID = arg_dataset(i).labels.contestID;
+                obj.labels(i).name       = arg_dataset(i).labels.name;
+                obj.labels(i).dataset_ID = arg_dataset(i).labels.dataset_ID;
             end
        end
         
         function set_structure(obj,arg_structure)
             if strcmp(class(arg_structure),'NET_STRUCTURE')
-                obj.structure = arg_structure;
+                obj.structure.prototxt_path    = arg_structure.prototxt_path;
+                obj.structure.train_batch_size = arg_structure.train_batch_size;
+                obj.structure.val_batch_size   = arg_structure.val_batch_size;
+                obj.structure.test_batch_size  = arg_structure.test_batch_size;
+                obj.structure.object_depth     = arg_structure.object_depth;
+                obj.structure.object_height    = arg_structure.object_height;
+                obj.structure.object_width     = arg_structure.object_width;
+                obj.structure.labels_length    = arg_structure.labels_length;
+                obj.structure.n_layers         = arg_structure.n_layers;
+                obj.structure.counter          = arg_structure.counter;
+                obj.structure.valid_structure  = arg_structure.valid_structure;
+                obj.structure.map              = arg_structure.map;
+                obj.structure.lr_mult          = arg_structure.lr_mult;
+                %obj.structure = arg_structure;
             else
                 APP_LOG('last_error','Expected object of class "NET_STRUCTURE"');
             end
@@ -182,15 +193,22 @@ classdef CAFFE < handle
         function set_layer(obj,layer_id,init_weights,init_bias)
             if obj.get.is_initialized()
                 obj.params                   = obj.get.params();
-                obj.params(layer_id).blob{1} = single(init_weights);
-                obj.params(layer_id).blob{2} = single(repmat(init_bias,size(obj.params(layer_id).blob{2})));
-
+                if size(obj.params(layer_id).data{1},1)==size(init_weights,1) && size(obj.params(layer_id).data{1},2)==size(init_weights,2) && size(obj.params(layer_id).data{1},3)==size(init_weights,3) && size(obj.params(layer_id).data{1},4)==size(init_weights,4)
+                    obj.params(layer_id).data{1} = single(init_weights);
+                else
+                    APP_LOG('last_error','Weight size miss-match');
+                end
+                if ~isempty(obj.params(layer_id).data{2})
+                    obj.params(layer_id).data{2} = single(repmat(init_bias,size(obj.params(layer_id).data{2})));
+                else
+                    APP_LOG('warning','Layer %d contains no bias. Ignoring set',layer_id);
+                end
                 obj.set.params();
             else
                 APP_LOG('last_error','Initialize caffe before initiallizing a layer');
             end
         end
-        
+
         %% FUNCTIONS
         function init(obj,phase)          
             if obj.get.is_initialized() == 1

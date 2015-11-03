@@ -6,7 +6,7 @@ function out = async_read_from_disk_and_preprocess(x)
 %% Processing details
 % Since CNNs are invariant in many transformations, I.e. if a neural net
 % sees for the first time a human face rotated by 30 degrees it may not
-% recognise it, certain affine transformations are applied creating much
+% recognize it, certain affine transformations are applied creating much
 % more unique images for the neural net, to learn. Such transformations are:
 %
 % 1. The translation transformation which is cutting a random box,
@@ -27,14 +27,7 @@ function out = async_read_from_disk_and_preprocess(x)
 %
 % input_dims         : The dimensions of caffe input layer.
 %
-% use_flip           : Boolean value in order to flip randomly the 50% of
-%                      objects.
-%
-% use_random_segments: Get a random box from the original object. i.e.
-%                      supplying objects of 259x259 dims and getting a
-%                      227x227 box. This technique forces the neural
-%                      network to be translation variant.
-% use_rot            : Use rotation of objects
+% flip_freq          : frequency of flipped objects
 %
 % rnd_segments_ratio : The ratio of object segmentation inside the batch
 %
@@ -54,22 +47,18 @@ function out = async_read_from_disk_and_preprocess(x)
 % Bug found under ubuntu 14.04 / Matlab R2015a
 % Workers garbage collector is not cleaning the memory efficiently which
 % causes extensive memory usage for workers making the system unresponsive 
-% while calling parfeval severaltimes from within a loop.
+% while calling parfeval several times from within a loop.
 java.lang.System.gc(); %FATAL MEMORY LEAK SOLVED
 
 %% PREPARE ATTRIBUTES
 paths                = x.paths;
-input_dims           = x.input_dims;
+input_dims           = [x.input_dims.width x.input_dims.height]; %Remember inconsistency between matlab and caffe dimensions
 
-use_flip             = x.use_flip;
-use_random_segments  = x.use_random_segments;
-use_rot              = x.use_rot;
-use_projs            = x.use_projs;
+flip_freq            = x.flip_freq;
 
-
-rnd_segments_ratio   = x.freq_random_segments;
-rot_ratio            = x.rot_freq;
-projections_ratio    = x.projections_freq;
+rnd_segments_freq    = x.rnd_segments_freq;
+rots_freq            = x.rot_freq;
+projs_freq    = x.projections_freq;
 
 rot_angle_bounds     = x.rot_angle_bounds;
 
@@ -82,129 +71,59 @@ for i=batch_size:-1:1
 end
 
 %% Convert frequencies to batch regions
-from = 1;
-to   = 0;
-if use_random_segments
-    to   = to + floor(batch_size * rnd_segments_ratio);
-    random_segments_region = [from to];
-end
-if use_rot
-    from = to + 1;
-    to = to + floor(batch_size * rot_ratio) -1 ;
-    rots_region = [from to];
-end
-if use_projs
-    from = to + 1;
-    to = to + floor(batch_size * projections_ratio);
-    projs_region = [from to];
-end
-from = to + 1;
-to = batch_size;
-non_processed_region = [from to];
+inner_counter = 0;
+
+rnd_segs_reg      = [inner_counter+1 ; inner_counter+round(batch_size*rnd_segments_freq)];
+inner_counter     = inner_counter +round(batch_size*rnd_segments_freq);
+
+rots_reg          = [inner_counter+1 ; inner_counter+round(batch_size*rots_freq)];
+inner_counter     = inner_counter +round(batch_size*rots_freq);
+
+projs_reg         = [inner_counter+1 ; inner_counter+round(batch_size*projs_freq)];
+inner_counter     = inner_counter +round(batch_size*projs_freq);
+
+non_processed_reg = [inner_counter+1 ; batch_size];
 
 %% PERFORM PROCESSING
 object_dims = size(data);
-if(use_random_segments)
+if(rnd_segs_reg(1)<=rnd_segs_reg(2))
     if object_dims(1)~=input_dims(1) || object_dims(2)~=input_dims(2)
-        processed_data = get_random_segments(data(:,:,:,random_segments_region(1):random_segments_region(2)),input_dims);
+        processed_data = get_random_segments(data(:,:,:,rnd_segs_reg(1):rnd_segs_reg(2)),input_dims);
     else
         APP_LOG('error',0,'Identical dimensions detected while extracting random segments');
         APP_LOG('error',0,'Object dimensions are [%d,%d]',object_dims(1),object_dims(2));
         APP_LOG('error_last',0,'Network dimensions are [%d,%d]',input_dims(1),input_dims(2));
     end
 end
-if (use_rot)
+if (rots_reg(1)<=rots_reg(2))
     theta = rot_angle_bounds(1) + (rot_angle_bounds(2)-rot_angle_bounds(1))*rand(1,1);
-    temp_data = imrotate(data(:,:,:,rots_region(1):rots_region(2)),theta,'bilinear','crop');
+    temp_data = imrotate(data(:,:,:,rots_reg(1):rots_reg(2)),theta,'bilinear','crop');
     %Resize to fit network input
      if object_dims(1)~=input_dims(1) || object_dims(2)~=input_dims(2)
-         processed_data(:,:,:,rots_region(1):rots_region(2))=get_resized_objects(temp_data,input_dims);
+         processed_data(:,:,:,rots_reg(1):rots_reg(2))=get_resized_objects(temp_data,input_dims);
      else
-         processed_data(:,:,:,rots_region(1):rots_region(2))=temp_data;
+         processed_data(:,:,:,rots_reg(1):rots_reg(2))=temp_data;
      end
      clear temp_data;
 end
-if (use_projs)
-    processed_data(:,:,:,projs_region(1):projs_region(2))=get_projections(data(:,:,:,projs_region(1):projs_region(2)),input_dims,rot_angle_bounds);
+if (projs_reg(1)<=projs_reg(2))
+    processed_data(:,:,:,projs_reg(1):projs_reg(2))=get_projections(data(:,:,:,projs_reg(1):projs_reg(2)),input_dims,rot_angle_bounds);
 end
 %% PASS ANY LEFTOVERS
-if non_processed_region(2)>=non_processed_region(1)
-    if object_dims(1)~=input_dims(1) || object_dims(2)~=input_dims(2)
-        processed_data(:,:,:,non_processed_region(1):non_processed_region(2)) = get_resized_objects(data(:,:,:,non_processed_region(1):non_processed_region(2)),input_dims);
-    else
-        processed_data(:,:,:,non_processed_region(1):non_processed_region(2)) = data(:,:,:,non_processed_region(1):non_processed_region(2));
-    end
+if non_processed_reg(1)<=non_processed_reg(2)
+    processed_data(:,:,:,non_processed_reg(1):non_processed_reg(2)) = get_resized_objects(data(:,:,:,non_processed_reg(1):non_processed_reg(2)),input_dims);
 end
 clear data;
 
-%% PERFORM HORIZONTAL FLIPPING IN ALL DATA
-if(use_flip)
-    rnd_flip_idxs=randperm(batch_size,floor(0.5*batch_size));
-    processed_data(:,:,:,rnd_flip_idxs)=flip(processed_data(:,:,:,rnd_flip_idxs),2);
+%% PERFORM HORIZONTAL FLIPPING
+if(flip_freq>0)
+    rnd_flip_idxs=randperm(batch_size,floor(flip_freq*batch_size));
+    processed_data(:,:,:,rnd_flip_idxs)=flip(processed_data(:,:,:,rnd_flip_idxs),1); %Width is 1st dimension, so we are actually performing vertical flip on a 90degrees rotated object
 end
 %% OUTPUT
 out{1,1}=processed_data;
 out{2,1}=uids;
 end
-
-% %% SET INDICES
-% from=1;
-% to=1;
-% 
-% object_dims = size(data);
-% %% PERFORM RANDOM SEGMENTATION FOR TRANSLATION INVARIANCE
-% if(use_random_segments)
-%     from=1;
-%     to=from+round(rnd_segments_ratio*batch_size)-1;
-%     if object_dims(1)~=input_dims(1) || object_dims(2)~=input_dims(2)
-%         new_data = get_random_segments(data(:,:,:,from:to),input_dims);
-%     else
-%         APP_LOG('error',0,'Identical dimensions detected while extracting random segments');
-%         APP_LOG('error',0,'Object dimensions are [%d,%d]',object_dims(1),object_dims(2));
-%         APP_LOG('error_last',0,'Network dimensions are [%d,%d]',input_dims(1),input_dims(2));
-%     end
-% end
-% %% PERFORM ROTATION FOR ROTATION INVARIANCE
-% if(use_rot)
-%     from=to+1;
-%     to  =from+round(rot_ratio*batch_size)-1;
-%     %get theta
-%     theta = rot_angle_bounds(1) + (rot_angle_bounds(2)-rot_angle_bounds(1))*rand(1,1);
-%     %perform rotation-crop on a random sample
-%     temp=imrotate(data(:,:,:,from:to),theta,'bilinear','crop');
-%     %Resize to fit network input
-%     if object_dims(1)~=input_dims(1) || object_dims(2)~=input_dims(2)
-%         new_data(:,:,:,from:to)=get_resized_objects(temp,input_dims);
-%     else
-%         new_data(:,:,:,from:to)=temp;
-%     end
-%     %%get theta, set affine2d
-%     %theta = rot_angle_bounds(1) + (rot_angle_bounds(2)-rot_angle_bounds(1))*rand(1,1);
-%     %tform = affine2d([cosd(theta) -sind(theta) 0; sind(theta) cosd(theta) 0; 0 0 1]);
-%     %
-%     %%perform rotation on a random sample
-%     %random_rot_idxs=randperm(length(paths),floor(rot_freq*length(paths)));
-%     %rotated_objs=imwarp(data(:,:,:,random_rot_idxs),tform);
-%     %
-%     %%crop rotated images to remove blanks
-%     %crop_h = abs(ceil(sind(theta)*object_dims(2)));
-%     %crop_w = abs(ceil(sind(theta)*object_dims(1)));
-%     %cropped_objs = rotated_objs(1+crop_h:end-crop_h,1+crop_w:end-crop_w,:,:);
-%     %
-%     %%resize cropped images to fit network input
-%     %data(:,:,:,random_rot_idxs) = get_resized_objects(cropped_objs,input_dims);
-% end
-% 
-% %resize what's been left to fit the network's input
-% from=to+1;
-% if(from<=batch_size)
-%     if object_dims(1)~=input_dims(1) || object_dims(2)~=input_dims(2)
-%         new_data(:,:,:,from:batch_size) = get_resized_objects(data(:,:,:,from:end),input_dims);
-%     else
-%         new_data(:,:,:,from:batch_size) = data(:,:,:,from:end);
-%     end
-% end
-
 
 %% PROCESSING TRAINING BATCH METHODS
 function output_data = get_random_segments(data,dims)

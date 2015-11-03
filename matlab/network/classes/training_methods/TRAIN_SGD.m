@@ -19,10 +19,9 @@ classdef TRAIN_SGD < handle
             obj.caffe= caffe;
         end
         function obj = init(obj)
-%           obj.Vt         = obj.caffe.zero_struct;
             for i=1:obj.caffe.structure.n_layers
-                for j=1:2
-                    obj.Vt(i).params{j}=zeros(size(obj.caffe.params(i).params{j}));
+                for j=1:length(obj.caffe.params(i).data) %weight + bias / weights
+                    obj.Vt(i).data{j}=zeros(size(obj.caffe.params(i).data{j}));
                 end
             end
             obj.curr_steps = 1;
@@ -58,7 +57,7 @@ classdef TRAIN_SGD < handle
             end
         end
         
-        function update_params(obj,const_layers,sum_grads,bpi)
+        function update_params(obj,sum_grads,bpi)
             if ~mod(obj.curr_steps+1,obj.stepsize)
                 APP_LOG('info','SGD changes learning rate from %f to %f',obj.lr,obj.lr*obj.gamma);
 %               APP_LOG('info','SGD changes momentum rate from %f to %f',obj.m,obj.m*obj.gamma + 1 - obj.gamma);
@@ -66,37 +65,15 @@ classdef TRAIN_SGD < handle
 %               obj.m =obj.m*obj.gamma + 1 - obj.gamma;
             end
             
-%            wcoeff= (1-obj.lr*obj.wd);
-%           wcoeff= (obj.lr*obj.wd);
- %           for i=1:obj.caffe.structure.n_layers
-%                if isempty(find(const_layers==i,1))
-%                    for j=1:2
-%                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - (obj.lr/bpi) * sum_grads(i).blob{j};
-%                        obj.caffe.weights(i).weights{j}=wcoeff*obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
-%                        obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - wcoeff*obj.caffe.weights(i).weights{j} - (obj.lr/bpi) * sum_grads(i).weights{j};
-%                        obj.caffe.weights(i).weights{j}=obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
-%                    end
-%                end
-%            end
-%             for i=1:obj.caffe.structure.n_layers
-%                 if isempty(find(const_layers==i,1))
-%                     for j=1:2
-%                         %Vt = m*Vt - (lr/bpi)*grads - lr*wd*Wt;
-%                         obj.Vt(i).weights{j}=obj.m * obj.Vt(i).weights{j} - (obj.lr/bpi) * sum_grads(i).blob{j} - obj.wd*obj.lr*obj.caffe.weights(i).weights{j};
-%                         obj.caffe.weights(i).weights{j}=obj.caffe.weights(i).weights{j}+obj.Vt(i).weights{j};
-%                     end
-%                 end
-%             end
-            lr_mult = obj.caffe.structure.lr_mult;
-            for i=1:obj.caffe.structure.n_layers
-                if isempty(find(const_layers==i,1))
-                    for j=1:length(obj.caffe.params(i).blob) %weight + bias / weights
-                        %local_lr = lr * local_lr_mult;
-                        %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
-                        local_lr = obj.lr * lr_mult{i,j};
-                        obj.Vt(i).blob{j}=obj.m * obj.Vt(i).blob{j} - (local_lr/bpi) * sum_grads(i).blob{j} - obj.wd*local_lr*obj.caffe.params(i).blob{j};
-                        obj.caffe.params(i).blob{j}=obj.caffe.params(i).blob{j}+obj.Vt(i).blob{j};
-                    end
+            lr_mult      = obj.caffe.structure.lr_mult;
+            n_layers     = obj.caffe.structure.n_layers;
+            for i=1:n_layers
+                for j=1:length(obj.caffe.params(i).data) %weight + bias / weights
+                    %local_lr = lr * local_lr_mult;
+                    %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
+                    local_lr = obj.lr * lr_mult{i,j};
+                    obj.Vt(i).data{j}=obj.m * obj.Vt(i).data{j} - (local_lr/bpi) * sum_grads(i).diff{j} - obj.wd*local_lr*obj.caffe.params(i).data{j};
+                    obj.caffe.params(i).data{j}=obj.caffe.params(i).data{j}+obj.Vt(i).data{j};
                 end
             end
             clear grads;

@@ -5,6 +5,8 @@ classdef VALIDATION < handle
 %   FOR:    VISION TEAM - AUTH
     properties
         caffe;
+        batch_factory;
+        
         k;        
         best_model_path;
         per_class_stats;  
@@ -18,8 +20,10 @@ classdef VALIDATION < handle
     
     methods
         %% INIT
-        function val = VALIDATION(arg_caffe,arg_best_model_path)
+        function val = VALIDATION(arg_caffe,arg_batch_factory,arg_best_model_path)
             val.caffe           = arg_caffe;
+            val.batch_factory   = arg_batch_factory;
+            
             val.overall.error   = inf;
             val.overall.top1    = 0;            
             val.overall.topk    = 0;            
@@ -60,11 +64,12 @@ classdef VALIDATION < handle
         end
         %% FUNCTIONS 
         function do_validation(val)
-                rcaffe = val.caffe;
+                rcaffe   = val.caffe;
+                bfactory = val.batch_factory;
                 
                 val.per_class_stats         = zeros(length(rcaffe.labels),4);
 
-                batch = rcaffe.batch_factory.prepare_validation_batch();
+                batch = bfactory.prepare_validation_batch();
 
                 while(~isempty(batch))
                     rcaffe.set.input(batch(1));                    
@@ -72,7 +77,7 @@ classdef VALIDATION < handle
                     probs=rcaffe.get.output();
                     
                     val.sum_per_class_stats(batch(2),probs{1});
-                    batch = rcaffe.batch_factory.create_validation_batch();                    
+                    batch = bfactory.create_validation_batch();                    
                 end
                 
                 sum_stats =sum(val.per_class_stats);
@@ -118,12 +123,15 @@ classdef VALIDATION < handle
         end            
         
         function save_best_model(val)
-                    model.params          = val.caffe.get.params();
-                    model.structure       = val.caffe.structure;
-                    model.labels          = val.caffe.labels;
-                    model.per_class_stats = val.per_class_stats;
-                    model.average         = val.average;
-                    model.overall         = val.overall;
+                    model.params             = val.caffe.get.params();
+                    model.structure          = val.caffe.structure;
+                    model.labels             = val.caffe.labels;
+                    model.per_class_stats    = val.per_class_stats;
+                    model.average            = val.average;
+                    model.overall            = val.overall;
+                    model.normalization_type = val.batch_factory.normalization_type;                    
+                    model.mean               = val.batch_factory.mean;
+                    model.std                = val.batch_factory.std;
                     save(val.best_model_path,'model','-v6');
                     clear model;                    
                     APP_LOG('info','Best model saved\n');

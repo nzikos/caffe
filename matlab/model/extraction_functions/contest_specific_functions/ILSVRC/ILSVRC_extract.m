@@ -53,6 +53,9 @@ for i=1:length(objs)
             % transformations on the fly?
             % Shouldnt we randomize the interpolation method on the fly?
             object.data          = imresize(obj_temp,dims, 'bilinear', 'antialiasing', false);
+            % Data permutation to WxHxD since Caffe uses dimension in the
+            % order of NxDxHxW. (Caffe is row major, matlab is column major)
+            object.data          = permute(object.data,[2 1 3]);
             %object.labels        = labels; %<<--- for debug
             object.uid           = labels.uid;
             %object.source        = im.path;%<<--- for debug

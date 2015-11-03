@@ -37,28 +37,27 @@ classdef NET_STRUCTURE < handle
         end
 
         %% PRINT WEIGHTS/BIAS FILLER PARAMETERS
-        function parameters = print_filler_parameters(structure,type,value)
+        function parameters = print_filler_parameters(structure,type,value1,value2)
             switch(type)
                 case 'gaussian'
                     formatSpec =['               type: "gaussian"\n'...
+                                 '               mean: %1.10f\n'...
                                  '               std: %1.10f\n'];
-                    parameters = sprintf(formatSpec,value);
-                case 'xavier'
-                    formatSpec ='               type: "xavier"\n';
-                    parameters = sprintf(formatSpec);
+                    parameters = sprintf(formatSpec,value1,value2);
                 case 'constant'
                     formatSpec =['               type: "constant"\n'...
-                                 '               value: %1.10f\n'];
-                    parameters = sprintf(formatSpec,value);
+                                 '               min: %1.10f\n'...
+                                 '               max: %1.10f\n'];
+                    parameters = sprintf(formatSpec,value1,value2);
                 otherwise
-                    APP_LOG('last_error','Unknown filler type "%s"',type);
+                    APP_LOG('last_error','Filler type "%s" not supported. Use gaussian/constant insted',type);
             end
         end
 
         function text = print_weight_bias_term_filler(structure,hyper_params)
-            weights_filler = structure.print_filler_parameters(hyper_params.weight_filler_type,hyper_params.weight_filler_value);
+            weights_filler = structure.print_filler_parameters(hyper_params.weight_filler_type,hyper_params.weight_filler_value1,hyper_params.weight_filler_value2);
             if hyper_params.bias_term
-                bias_filler = structure.print_filler_parameters(hyper_params.bias_filler_type,hyper_params.bias_filler_value);
+                bias_filler = structure.print_filler_parameters(hyper_params.bias_filler_type,hyper_params.bias_filler_value1,hyper_params.bias_filler_value2);
                 formatSpec =['          bias_term: true\n'...
                              '          bias_filler {\n'...
                              '%s'...
@@ -96,10 +95,10 @@ classdef NET_STRUCTURE < handle
             structure.valid_structure = -1;            
         end
         %% SET OBJECT DIMENSIONS
-        function set_input_object_dims(structure,depth,height,width)
-            structure.object_depth  = depth;
+        function set_input_object_dims(structure,height,width,depth)
             structure.object_height = height;
             structure.object_width  = width;
+            structure.object_depth  = depth;
             structure.valid_structure = -1;            
         end        
         
@@ -116,8 +115,8 @@ classdef NET_STRUCTURE < handle
         %% ADD CONVOLUTIONAL LAYER
         function add_CONV_layer(structure,name,number_of_outputs,kernel,...
                                 stride,pad,bias_term,weight_filler_type,...
-                                weight_filler_value,weight_lr_mult,...
-                                bias_filler_type,bias_filler_value,bias_lr_mult)
+                                weight_filler_value1,weight_filler_value2,weight_lr_mult,...
+                                bias_filler_type,bias_filler_value1,bias_filler_value2,bias_lr_mult)
 
             s.num_output            = number_of_outputs;
             switch length(kernel)
@@ -152,10 +151,12 @@ classdef NET_STRUCTURE < handle
             end
             s.bias_term           = bias_term;
             s.weight_filler_type  = weight_filler_type;
-            s.weight_filler_value = weight_filler_value;
+            s.weight_filler_value1= weight_filler_value1;
+            s.weight_filler_value2= weight_filler_value2;
             s.weight_lr_mult      = weight_lr_mult;
             s.bias_filler_type    = bias_filler_type;
-            s.bias_filler_value   = bias_filler_value;
+            s.bias_filler_value1  = bias_filler_value1;
+            s.bias_filler_value2  = bias_filler_value2;
             s.bias_lr_mult        = bias_lr_mult;
             
             [bottom,top] = structure.get_bottom_top_blobs(name);
@@ -166,13 +167,14 @@ classdef NET_STRUCTURE < handle
         %% PRINT CONVOLUTIONAL LAYER
         function print_CONV_layer(structure,fileID,layer)
             bias_weight_filler    = structure.print_weight_bias_term_filler(layer.hyper_params);
+
             formatSpec = ['layers {\n'...
                          '      name: "%s"\n'...
                          '      type: %s\n'...
                          '      bottom: "%s"\n'...
                          '      top: "%s"\n'...
                          '      blobs_lr: %1.12f\n'...
-                         '      blobs_lr: %1.12f\n'...
+                         '%s'...
                          '      convolution_param {\n'...
                          '          num_output: %d\n'...
                          '          kernel_h: %d\n'...
@@ -186,9 +188,13 @@ classdef NET_STRUCTURE < handle
                          '}'];
 
             hyper_params = layer.hyper_params;
-
+            if hyper_params.bias_term
+                bias_local_lr_mult = sprintf('blobs_lr: %1.12f\n',hyper_params.bias_lr_mult);
+            else
+                bias_local_lr_mult = [];
+            end
             structure.WRITE_TO_FILE(fileID,formatSpec,layer.name,layer.type,layer.bottom,layer.top,...
-                                    hyper_params.weight_lr_mult,hyper_params.bias_lr_mult,...
+                                    hyper_params.weight_lr_mult,bias_local_lr_mult,...
                                     hyper_params.num_output,hyper_params.kernel_h,hyper_params.kernel_w,...
                                     hyper_params.pad_h,hyper_params.pad_w,hyper_params.stride_h,...
                                     hyper_params.stride_w,bias_weight_filler);
@@ -196,18 +202,9 @@ classdef NET_STRUCTURE < handle
             
         %% ADD ACTIVATION LAYER        
         function add_ACTIV_layer(structure,name,type)            
-            [bottom,top] = structure.get_bottom_top_blobs(name);
+            [bottom,~] = structure.get_bottom_top_blobs(name);
             type=upper(type);
-            switch type
-                case 'RELU'
-                    structure.put_to_map(0,name,type,bottom,bottom,[]);
-                case 'SIGMOID'
-                    structure.put_to_map(0,name,type,bottom,top,[]);                    
-                case 'TANH'
-                    structure.put_to_map(0,name,type,bottom,top,[]);                    
-                otherwise
-                    APP_LOG('last_error','UNKNOWN Activation %s',type);
-            end
+            structure.put_to_map(0,name,type,bottom,bottom,[]);
             structure.valid_structure = -1;
         end
 
@@ -250,6 +247,37 @@ classdef NET_STRUCTURE < handle
             structure.WRITE_TO_FILE(fileID,formatSpec,layer.name,layer.type,layer.bottom,layer.top,...
                                     hyper_params.local_size,hyper_params.alpha,...
                                     hyper_params.beta,hyper_params.norm_region);
+        end
+        %% ADD MEAN VARIANCE NORMALIZATION LAYER
+        function add_MVN_layer(structure,name,normalize_variance,across_channels)
+            if strcmp(normalize_variance,'true') || strcmp(normalize_variance,'false')
+                s.normalize_variance    = normalize_variance;
+            else
+                APP_LOG('last_error','Erroneous attribute for normalize variance. Use true/false');
+            end
+            if strcmp(across_channels,'true') || strcmp(across_channels,'false')
+                s.across_channels       = across_channels;
+            else
+                APP_LOG('last_error','Erroneous attribute for accross channels. Use true/false');
+            end
+            [bottom, top] = structure.get_bottom_top_blobs(name);
+            structure.put_to_map(0,name,'MVN',bottom,top,s);
+        end
+        %% PRINT MEAN VARIANCE NORMALIZATION LAYER
+        function print_MVN_layer(structure,fileID,layer)
+            formatSpec= ['layers{\n'...
+                         '      name: "%s"\n'...
+                         '      type: %s\n'...
+                         '      bottom: "%s"\n'...
+                         '      top: "%s"\n'...
+                         '      mvn_param{\n'...
+                         '            normalize_variance: %s\n'...
+                         '            across_channels: %s\n'...
+                         '      }\n'...
+                         '}'];
+            hyper_params = layer.hyper_params;
+            structure.WRITE_TO_FILE(fileID,formatSpec,layer.name,layer.type,layer.bottom,layer.top,...
+                                    hyper_params.normalize_variance,hyper_params.across_channels);
         end
         %% ADD POOLING LAYER
         function add_POOL_layer(structure,name,method,kernel,stride,pad)
@@ -315,15 +343,17 @@ classdef NET_STRUCTURE < handle
         end
         %% ADD INNER PRODUCT LAYER
         function add_IP_layer(structure,name,number_of_output,bias_term,...
-                              weight_filler_type,weight_filler_value,weight_lr_mult,...
-                              bias_filler_type,bias_filler_value,bias_lr_mult)
+                              weight_filler_type,weight_filler_value1,weight_filler_value2,weight_lr_mult,...
+                              bias_filler_type,bias_filler_value1,bias_filler_value2,bias_lr_mult)
             s.num_output          = number_of_output;
             s.weight_filler_type  = weight_filler_type;
-            s.weight_filler_value = weight_filler_value;
+            s.weight_filler_value1= weight_filler_value1;
+            s.weight_filler_value2= weight_filler_value2;
             s.weight_lr_mult      = weight_lr_mult;
             s.bias_term           = bias_term;
             s.bias_filler_type    = bias_filler_type;
-            s.bias_filler_value   = bias_filler_value;
+            s.bias_filler_value1  = bias_filler_value1;
+            s.bias_filler_value2  = bias_filler_value2;            
             s.bias_lr_mult        = bias_lr_mult;
             
             [bottom,top] = structure.get_bottom_top_blobs(name);
@@ -339,16 +369,21 @@ classdef NET_STRUCTURE < handle
                          '      bottom: "%s"\n'...
                          '      top: "%s"\n'...
                          '      blobs_lr: %1.12f\n'...
-                         '      blobs_lr: %1.12f\n'...
+                         '%s'...
                          '      inner_product_param{\n'...
                          '            num_output: %d\n'...
                          '%s'...
                          '      }\n'...
                          '}'];
             hyper_params = layer.hyper_params;
+            if hyper_params.bias_term
+                bias_local_lr_mult = sprintf('blobs_lr: %1.12f\n',hyper_params.bias_lr_mult);
+            else
+                bias_local_lr_mult = [];
+            end
             %print to file
             structure.WRITE_TO_FILE(fileID,formatSpec,layer.name,layer.type,layer.bottom,layer.top,...
-                                    hyper_params.weight_lr_mult,hyper_params.bias_lr_mult,...
+                                    hyper_params.weight_lr_mult,bias_local_lr_mult,...
                                     hyper_params.num_output,bias_weight_filler);
         end
         %% ADD DROPOUT LAYER
@@ -501,6 +536,8 @@ classdef NET_STRUCTURE < handle
                         structure.print_ACTIV_layer(fileID,layer);
                     case 'LRN'
                         structure.print_LRN_layer(fileID,layer);
+                    case 'MVN'
+                        structure.print_MVN_layer(fileID,layer);
                     case 'POOLING'
                         structure.print_POOL_layer(fileID,layer);
                     case 'INNER_PRODUCT'
@@ -598,7 +635,7 @@ classdef NET_STRUCTURE < handle
                 APP_LOG('debug','%3d. %15s:[%5d,%5d,%5d]',layer_counter,upper(layer.name),output.width,output.height,output.depth);                    
                 end
                 if ~(output.width==floor(output.width) && output.height==floor(output.height) && output.depth==floor(output.depth))
-                    APP_LOG('error','Output feature map of %s layer has non-integer bounds',layer{2});
+                    APP_LOG('error','Output feature map of %s layer has non-integer bounds',layer.name);
                     APP_LOG('last_error','Change the configuration considering the documentation');
                 end
                 structure.map(i).output     = output;

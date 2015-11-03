@@ -80,7 +80,7 @@ static void do_upload_input(const mxArray* const bottom){
 			mex_error(error_msg);
 		}
 
-		const float* const data_ptr = reinterpret_cast<const float* const>(mxGetPr(elem));
+		const float* data_ptr = reinterpret_cast<const float*>(mxGetPr(elem));
 		switch (Caffe::mode()) {
 			case Caffe::CPU:
 				caffe_copy(input_blobs[i]->count(), data_ptr, input_blobs[i]->mutable_cpu_data());
@@ -143,7 +143,7 @@ static void download_output(MEX_ARGS){
 	plhs[0] = do_download_output();
 }
 
-//--------API CALL 'get_blob'--------------------------------------------------
+//--------API CALL 'get_blob_data'---------------------------------------------
 //PURPOSE:
 //	Returns values of a specified blob.
 //ARGUMENTS:
@@ -152,7 +152,7 @@ static void download_output(MEX_ARGS){
 //	Structure with 4D array of "data" of the specified blob and the "name" 
 //	of the blob
 //-----------------------------------------------------------------------------
-static mxArray* do_get_blob(int id){
+static mxArray* do_get_blob_data(int id){
 	const vector<string>& blob_names = net_->blob_names();
 	const vector<shared_ptr<Blob<float> > >& blobs = net_->blobs();
 
@@ -160,13 +160,13 @@ static mxArray* do_get_blob(int id){
 	mxArray* mx_out;
 
 	const mwSize dims[2] = {1,1};
-	const char* fnames[2] = {"blob","name"};
+	const char* fnames[2] = {"data","name"};
 	mx_out = mxCreateStructArray(2, dims, 2, fnames);
 
 	mwSize blob_dims[4] = {blobs[id]->width(), blobs[id]->height(), blobs[id]->channels(), blobs[id]->num()};
 	mxArray* mx_blob =  mxCreateNumericArray(4, blob_dims, mxSINGLE_CLASS, mxREAL);
 
-	mxSetField(mx_out, 0, "blob", mx_blob);
+	mxSetField(mx_out, 0, "data", mx_blob);
 	mxSetField(mx_out, 0, "name", mxCreateString(blob_names[id].c_str()));
 
 	float* out_data_ptr = reinterpret_cast<float*>(mxGetPr(mx_blob));
@@ -183,7 +183,7 @@ static mxArray* do_get_blob(int id){
 	return mx_out;
 }
 
-static void get_blob(MEX_ARGS){
+static void get_blob_data(MEX_ARGS){
 	if (nrhs !=1) {
 		ostringstream error_msg;
 		error_msg << "Expected 1 arguments, got " << nrhs;
@@ -197,7 +197,64 @@ static void get_blob(MEX_ARGS){
 		mex_error(error_msg.str());
 	}
 	blob_id--; //make indexing 0-based	
-	plhs[0] = do_get_blob(blob_id);
+	plhs[0] = do_get_blob_data(blob_id);
+}
+
+//--------API CALL 'get_blob_diff'---------------------------------------------
+//PURPOSE:
+//	Returns deltas of a specified blob.
+//ARGUMENTS:
+//	blob id as integer
+//RETURNS:
+//	Structure with 4D array of "diff" of the specified blob and the "name" 
+//	of the blob
+//-----------------------------------------------------------------------------
+static mxArray* do_get_blob_diff(int id){
+	const vector<string>& blob_names = net_->blob_names();
+	const vector<shared_ptr<Blob<float> > >& blobs = net_->blobs();
+
+	// Step 2: prepare output array of structures
+	mxArray* mx_out;
+
+	const mwSize dims[2] = {1,1};
+	const char* fnames[2] = {"diff","name"};
+	mx_out = mxCreateStructArray(2, dims, 2, fnames);
+
+	mwSize blob_dims[4] = {blobs[id]->width(), blobs[id]->height(), blobs[id]->channels(), blobs[id]->num()};
+	mxArray* mx_blob =  mxCreateNumericArray(4, blob_dims, mxSINGLE_CLASS, mxREAL);
+
+	mxSetField(mx_out, 0, "diff", mx_blob);
+	mxSetField(mx_out, 0, "name", mxCreateString(blob_names[id].c_str()));
+
+	float* out_data_ptr = reinterpret_cast<float*>(mxGetPr(mx_blob));
+	switch (Caffe::mode()) {
+		case Caffe::CPU:
+			caffe_copy(blobs[id]->count(), blobs[id]->cpu_diff(),out_data_ptr);
+			break;
+		case Caffe::GPU:
+			caffe_copy(blobs[id]->count(), blobs[id]->gpu_diff(),out_data_ptr);
+			break;
+		default:
+			LOG(FATAL) << "Unknown Caffe mode.";
+	}  
+	return mx_out;
+}
+
+static void get_blob_diff(MEX_ARGS){
+	if (nrhs !=1) {
+		ostringstream error_msg;
+		error_msg << "Expected 1 arguments, got " << nrhs;
+		mex_error(error_msg.str());
+	}
+	int blob_id = static_cast<int>(mxGetScalar(prhs[0]));
+	const vector<string>& blob_names = net_->blob_names();
+	if(blob_id<=0 || blob_id >blob_names.size()){
+		ostringstream error_msg;
+		error_msg << "Invalid blob id " << blob_id << ". Bounds are: [1 , " << blob_names.size()-1 << "]";
+		mex_error(error_msg.str());
+	}
+	blob_id--; //make indexing 0-based	
+	plhs[0] = do_get_blob_diff(blob_id);
 }
 
 //--------API CALL 'get_blobs_number'------------------------------------------
@@ -318,7 +375,7 @@ static mxArray* do_get_params() {
 	mxArray* mx_layers;
 
 	const mwSize dims[2] = {num_layers, 1};
-	const char* fnames[2] = {"blob", "name"};
+	const char* fnames[2] = {"data", "name"};
 	mx_layers = mxCreateStructArray(2, dims, 2, fnames);
 
 	// Step 3: copy params into output
@@ -334,7 +391,7 @@ static mxArray* do_get_params() {
 			prev_layer_name = layer_names[i];
 			const mwSize dims[2] = {static_cast<mwSize>(layer_blobs.size()), 1};
 			mx_layer_cells = mxCreateCellArray(2, dims);
-			mxSetField(mx_layers, mx_layer_index, "blob", mx_layer_cells);
+			mxSetField(mx_layers, mx_layer_index, "data", mx_layer_cells);
 			mxSetField(mx_layers, mx_layer_index, "name",mxCreateString(layer_names[i].c_str()));
 			mx_layer_index++;
 		}
@@ -391,14 +448,14 @@ static void do_set_params(const mxArray* mx_layers) {
 			continue;
 		}
 		char *layer_name = mxArrayToString(mx_layer_name);
-		mxArray *mx_params_cell = mxGetField(mx_layers, i, "blob");
+		mxArray *mx_params_cell = mxGetField(mx_layers, i, "data");
 		if (mx_params_cell == NULL){
-			mexPrintf("layer %d has no field ""blob"", ignore\n", i);
+			mexPrintf("layer %d has no field ""data"", ignore\n", i);
 			continue;
 		}
 		if (!mxIsCell(mx_params_cell))
 		{
-			mexPrintf("layer %d field ""blob"" is not cell, ignore\n", i);
+			mexPrintf("layer %d field ""data"" is not cell, ignore\n", i);
 			continue;
 		}
 		unsigned int weight_blob_num = mxGetNumberOfElements(mx_params_cell);
@@ -496,7 +553,7 @@ static mxArray* do_get_gradients(){
 	// Step 2: prepare output array of structures
 	mxArray* mx_layers;
 	const mwSize dims[2] = {num_layers, 1};
-	const char* fnames[2] = {"blob", "name"};
+	const char* fnames[2] = {"diff", "name"};
 	mx_layers = mxCreateStructArray(2, dims, 2, fnames);
 	// Step 3: copy params into output
 	prev_layer_name = "";
@@ -511,7 +568,7 @@ static mxArray* do_get_gradients(){
 			prev_layer_name = layer_names[i];
 			const mwSize dims[2] = {static_cast<mwSize>(layer_blobs.size()), 1};
 			mx_layer_cells = mxCreateCellArray(2, dims);
-			mxSetField(mx_layers, mx_layer_index, "blob", mx_layer_cells);
+			mxSetField(mx_layers, mx_layer_index, "diff", mx_layer_cells);
 			mxSetField(mx_layers, mx_layer_index, "name", mxCreateString(layer_names[i].c_str()));
 			mx_layer_index++;
 		}
@@ -740,13 +797,14 @@ static handler_registry handlers[] = {
 	{	"set_mode_gpu",		set_mode_gpu    },
 	{	"set_phase",		set_phase	},
 	{	"set_device",		set_device      },
-	{	"get_params",		get_params     },
+	{	"get_params",		get_params      },
 	{	"set_params",		set_params	},
 	{	"upload_input",		upload_input	},
 	{	"download_output",	download_output },
 	{	"get_gradients",	get_gradients	},
 	{	"get_blobs_number",	get_blobs_number},
-	{	"get_blob",		get_blob	},
+	{	"get_blob_data",	get_blob_data	},
+	{	"get_blob_diff",	get_blob_diff	},
 	{	"get_init_key",		get_init_key    },
 	{	"reset",		reset           },
 	// The end.

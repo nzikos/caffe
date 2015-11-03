@@ -2,24 +2,10 @@ classdef BATCH_FACTORY < handle
     %BATCH_FACTORY class purpose is to create a batch of images in order to
     %be processed by caffe.
     %% ATTRIBUTES
-    %       train_batch_size       : The number of training objects which
-    %                                are,at once, send to caffe while training.
-    %       val_batch_size         : The number of validation objects which are, 
-    %                                at once, send to caffe while validating.
-    %       test_batch_size        : The number of testing images which are, at
-    %                                once, send to caffe while testing.
-    %       input_dims             : The size [HxW] of the images caffe expects 
-    %                                to get.
     %       use_mean_std           : Use mean and std extracted from
     %                                training set in order to normalize
     %                                samples. mean and std dims are [HxWxD]
-    %       use_flip               : Use flipped objects or not.
-    %       use_random_segments    : Use random segments from the objects or
-    %                                not.
-    %       use_rot                : Use rotated images or not.
-    %       use_projs              : Use projections (projective2d function)
-    %
-    %       freq_random_segments   : Ratio of objects random segmentation per
+    %       rnd_segments_freq     : Ratio of objects random segmentation per
     %                                batch
     %       rot_freq               : Ratio of objects rotation per batch
     %       projections_freq       : Frequency of projected objects per batch
@@ -57,18 +43,16 @@ classdef BATCH_FACTORY < handle
     properties  
         net_structure;
 
-        use_mean_std     = 0;
-        mean             = [];
-        std              = [];
+        normalization_type = 'zero_one_scale';
+        mean              = [];
+        batched_mean   = [];
+        std               = [];
+        batched_std    = [];
         
-        use_flip         = 0;
-        use_random_segments = 0;        
-        use_rot          = 0;
-        use_projs        = 0;
-        
-        freq_random_segments= 0;        
-        rot_freq         = 0;
-        projections_freq = 0;
+        rnd_segments_freq = 0;        
+        rot_freq          = 0;
+        projections_freq  = 0;
+        flip_freq         = 0.5;
         
         rot_angle_bounds = [0 0];
                 
@@ -109,7 +93,7 @@ classdef BATCH_FACTORY < handle
                     parpool(obj.train_queue_size);
                 end
             else
-                parpool(obj.train_queue_size);                
+                parpool(obj.train_queue_size);
             end                        
         end
                 
@@ -119,69 +103,61 @@ classdef BATCH_FACTORY < handle
                 obj.train_objects{i,1}      = arg_objects(i).paths;
             end
             obj.train_objects_pool = obj.train_objects;
-%            rand_idxs         = randperm(length(obj.train_objects),length(obj.train_objects));
-%            obj.train_objects = obj.train_objects(rand_idxs);
         end
         
         %% SET validation objects paths
         function set_validation_objects(obj,arg_objects)
             obj.validation_objects       = vectorize_objects_fpaths(arg_objects);
         end
-        %% Internal SET use mean std on batch during training
+        %% Internal SET mean and std on batch during training
         function set_use_mean_std(obj,arg)
-            obj.use_mean_std = arg.get_mean_std;
             obj.mean         = arg.mean;
             obj.std          = arg.std;
         end
         
         %% SET Whether to use mean/std for batch normalization
-        function normalize_batches(obj,arg)
+        function normalize_input(obj,arg_type)
             %This is usable only when metadata contain the extracted mean and std from the dataset
-            if obj.use_mean_std && ~arg    
-                obj.use_mean_std = arg;
-                if obj.use_mean_std
-                    obj.mean       = single(imresize(obj.mean,[obj.net_structure.object_height obj.net_structure.object_width] ,'bilinear','antialiasing',false));
-                    obj.std        = single(imresize(obj.std ,[obj.net_structure.object_height obj.net_structure.object_width],'bilinear','antialiasing',false));
-                end            
-            else
-                APP_LOG('warning','Metadata have not computed mean and std from current dataset. Ignoring Force use');
+            arg_type=lower(arg_type);
+            switch arg_type
+                case 'zero_one_scale'
+                    obj.normalization_type = arg_type;
+                otherwise
+                    obj.normalization_type = arg_type;
+                    if(numel(obj.mean)~=0 && numel(obj.std)~=0)
+                        obj.mean       = single(imresize(obj.mean,[obj.net_structure.object_width obj.net_structure.object_height],'bilinear','antialiasing',false));
+                        obj.std        = single(imresize(obj.std ,[obj.net_structure.object_width obj.net_structure.object_height],'bilinear','antialiasing',false));                    
+                    else
+                        APP_LOG('warning','Metadata have not computed mean and std from current dataset. Falling back to zero_one_scale');
+                        obj.normalization_type = 'zero_one_scale';
+                        APP_LOG('warning','Normalization type set to 0-1 space');
+                    end
             end
         end
         
         %% SET training objects flipping attribute
-        function use_flipped(obj,use_flip)
-            obj.use_flip = use_flip;
+        function flipped(obj,flip_freq)
+            obj.flip_freq = flip_freq;
         end
         
         %% SET training objects random segmentation attributes
-        function use_random_segmentation(obj,value,freq)
-            obj.use_random_segments=value;
-            if (obj.use_random_segments)
-                obj.freq_random_segments = freq;
-            end
+        function random_segmentation(obj,freq)
+            obj.rnd_segments_freq = freq;
         end
         
         %% SET training objects rotation attributes
-        function use_rotation(obj,value,theta_bounds,freq)
-            obj.use_rot = value;
-            if (obj.use_rot)
-                obj.rot_angle_bounds = theta_bounds;
-                obj.rot_freq = freq;
-            end
+        function rotation(obj,theta_bounds,freq)
+             obj.rot_angle_bounds = theta_bounds;
+             obj.rot_freq = freq;
         end
         
         %% SET Use projections of objects
-        function use_projections(obj,value,freq)
-            obj.use_projs = value;
+        function projections(obj,freq)
             obj.projections_freq = freq;
         end
         
         %% Paths assignment to workers
         function assign_training_paths(obj,which_queue_id)
-            %from = obj.train_objects_pos;
-            %to   = obj.train_objects_pos + obj.net_structure.train_batch_size;
-            %obj.train_objects_pos = to;
-            %obj.train_curr_paths{which_queue_id} = obj.train_objects(from+1:to);
             for i=obj.net_structure.train_batch_size:-1:1
                 class_idx = ceil(rand(1,1)*length(obj.train_objects_pool));
                 local_array(i,1)=obj.train_objects_pool{class_idx}(1);
@@ -213,14 +189,8 @@ classdef BATCH_FACTORY < handle
             obj.assign_training_paths(obj.train_queue_idx);%assign new paths            
             
             out=fetchOutputs(obj.train_queue{obj.train_queue_idx});%fetch old work
-            if(obj.use_mean_std)
-                out{1,1}=single(out{1,1});
-                for i=1:size(out{1,1},4)
-                    out{1,1}(:,:,:,i)=(out{1,1}(:,:,:,i)-obj.mean)./obj.std;
-                end
-            else
-                out{1,1}=im2single(out{1,1});
-            end
+
+            out{1,1}=obj.input_normalization_function(out{1,1});
             out{2,1}=single(out{2,1});
             
             obj.async_load_current_train_batch(obj.train_queue_idx); %assign new work
@@ -234,14 +204,7 @@ classdef BATCH_FACTORY < handle
         function out = create_validation_batch(obj)    
             if(~isempty(obj.validation_queue{obj.validation_queue_idx}))
                 out=fetchOutputs(obj.validation_queue{obj.validation_queue_idx});
-                if(obj.use_mean_std)
-                    out{1,1}=single(out{1,1});                    
-                    for i=1:size(out{1,1},4)
-                        out{1,1}(:,:,:,i)=(out{1,1}(:,:,:,i)-obj.mean)./obj.std;
-                    end
-                else
-                    out{1,1}=im2single(out{1,1});
-                end
+                out{1,1}=obj.input_normalization_function(out{1,1});
             else
                 out=[]; %stop signal for VALIDATION.m
                 return;
@@ -252,6 +215,12 @@ classdef BATCH_FACTORY < handle
             if(obj.validation_queue_idx>obj.validation_queue_size)
                 obj.validation_queue_idx=1;
             end
+        end
+        
+        function out = create_test_batch(obj,data)
+            out{1,1} = permute(data, [2 1 3 4]);
+            out{1,1} = obj.input_normalization_function(out{1,1});
+%            out{1,1} = obj.input_normalization_function(data);
         end
         
         %% Prepare asynchronous Batch creation
@@ -265,17 +234,16 @@ classdef BATCH_FACTORY < handle
         
         function async_load_current_train_batch(obj,i)
             x.paths                    = obj.train_curr_paths{i};
-            x.input_dims               = [obj.net_structure.object_height obj.net_structure.object_width];
-            x.use_flip                 = obj.use_flip;
-            x.use_rot                  = obj.use_rot;
-            x.use_random_segments      = obj.use_random_segments;
-            x.use_projs                = obj.use_projs;
-            x.freq_random_segments     = obj.freq_random_segments;
+            x.input_dims.height        = obj.net_structure.object_height;
+            x.input_dims.width         = obj.net_structure.object_width;
+            x.flip_freq                = obj.flip_freq;
+            x.rnd_segments_freq        = obj.rnd_segments_freq;
             x.rot_freq                 = obj.rot_freq;
             x.projections_freq         = obj.projections_freq;
             
             x.rot_angle_bounds         = obj.rot_angle_bounds;
             obj.train_queue{i}         = parfeval(@async_read_from_disk_and_preprocess,1,x);
+%           out = async_read_from_disk_and_preprocess(x);
         end
 
         function out = prepare_validation_batch(obj)            
@@ -286,6 +254,25 @@ classdef BATCH_FACTORY < handle
             end
             out = obj.create_validation_batch();
         end
-    end
+        
+        function data_out = input_normalization_function(obj,data_in)
+            batch_size = size(data_in,4);
+            switch obj.normalization_type
+                case 'subtract_means_normalize_variances'
+                    if size(obj.batched_mean,4)~=batch_size
+                        obj.batched_mean=repmat(obj.mean,[1 1 1 batch_size]);
+                    end
+                    if size(obj.batched_std,4)~=batch_size
+                        obj.batched_std =repmat(obj.std,[1 1 1 batch_size]);
+                    end
+                    data_in =single(data_in);
+                    data_out=(data_in - obj.batched_mean)./obj.batched_std;
+                case 'zero_one_scale'
+                    data_out=im2single(data_in);
+                otherwise
+                    APP_LOG('last_error','Erroneous type of normalization');
+            end
+        end
+    end    
 end
 

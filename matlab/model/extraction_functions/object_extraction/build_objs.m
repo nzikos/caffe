@@ -1,4 +1,4 @@
-function data = build_objs(set,meta,paths,dims,contest)
+function data = build_objs(set,meta,paths,dims,dataset)
 %BUILD_OBJS This function is used to extract the objects from the images
 %using the previously build metadata.
 
@@ -10,7 +10,7 @@ function data = build_objs(set,meta,paths,dims,contest)
 %    datasets. In the end of every class it is printing:
 %       1. The uid in integer format of the class. 
 %       2. The class name in human understandble format. 
-%       3. The class id from the contest.
+%       3. The class id from the dataset.
 %       4. The number of objects extracted for each class.
 %%  Variables explanation
 %       class_names_map : Containers.map including a 1-1 relation model of
@@ -43,8 +43,8 @@ end
 APP_LOG('header','%s',out);
 
 %% Init
-class_names_map = contest.class_names_map;
-extract_object  = contest.extract_objects;
+class_names_map = dataset.class_names_map;
+extract_object  = dataset.extract_objects;
 
 classes = meta.rmap.(set{1}).keys; %SAME FOR ALL SETS (CHECKED BEFORE CALLING)
                                    %defining classes outside main loop 
@@ -70,7 +70,7 @@ for j=1:length(classes)
         %Get only the objects that belong in j-th class of i-th set
         shrinked_meta = get_shrinked_meta(meta.data.(set{i}),...
                                           meta.rmap.(set{i}),...
-                                          labels.contestID);     
+                                          labels.dataset_ID);     
                                       
         %Get dimensions of extracted object (dataset relative)
         this_dims = dims.(set{i});

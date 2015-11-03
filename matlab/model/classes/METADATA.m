@@ -28,12 +28,12 @@ classdef METADATA < handle
             obj.rmap=[];
         end
         
-        function build_metadata(obj,paths,contest,set)
-            [obj.data,obj.rmap] = build_meta(paths,contest,set);
+        function build_metadata(obj,paths,dataset,sets)
+            [obj.data,obj.rmap] = build_meta(paths,dataset,sets);
         end
         
-        function check(obj,set)
-            check_meta(obj.data,obj.rmap,set);
+        function check(obj,sets)
+            check_meta(obj.data,obj.rmap,sets);
         end
         
         function print(obj,set,class_names_map)

@@ -1,4 +1,4 @@
-function [data,rmap] = build_meta(paths,contest,set)
+function [data,rmap] = build_meta(paths,dataset,set)
 %   BUILD_META.m This function is used to build the metadata tables and
 %   class maps that later will be used to export the objects from images
 %
@@ -9,9 +9,9 @@ function [data,rmap] = build_meta(paths,contest,set)
 %   2. Maps classes to objects.
 
 %   User is able to import his/her own function which is in charge of
-%   extracting the metadata of a contest.
+%   extracting the metadata from a specified a dataset.
 %   This can be done by supplying the custom function at the handler under
-%   meta.funcs.readmeta
+%   dataset.readmeta
 %   The project is waiting as output from this function an array of structs
 %   Each struct must contain the metadata of a specific file in the 
 %   following way:
@@ -23,10 +23,10 @@ function [data,rmap] = build_meta(paths,contest,set)
 %   [size]      2 element array containing [height width] this image had
 %               when bounding boxes were extracted.
 %               This is needed by the extract objects function because when
-%               the bounding boxes were extracted on some contests the
+%               the bounding boxes were extracted on some datasets the
 %               image was scaled to these dimensions.
 %
-%   [obj]       The object. A struct containing all the objects that exist
+%   [objs]      The object. A struct containing all the objects that exist
 %               under the specific image.
 %               [name]      The object name / class id.
 %               [bndbox]    The bounding box, inside which, this object is 
@@ -41,12 +41,12 @@ function [data,rmap] = build_meta(paths,contest,set)
 %%  Build metadata
     APP_LOG('header','BUILDING META');
     
-    meta_ext    =contest.meta_extension;
+    meta_ext    =dataset.meta_extension;
     meta_paths  =paths.meta;
-    imdb_ext    =contest.im_extension;
+    imdb_ext    =dataset.im_extension;
     imdb_paths  =paths.imdb;
     
-    readmeta_function = contest.read_meta;
+    readmeta_function = dataset.read_meta;
     class_location = {'objs','name'};
       
 	for i=1:length(set)
@@ -69,7 +69,7 @@ function meta = extract_meta(meta_dir,meta_ext,imdb_dir,imdb_ext,get_meta_from)
 %   subdirectories recursively, returning the filepaths and the relative 
 %   filepath of all files with the specified extension.
 %
-%   After that, it is calling @read_meta, which is a contest specific
+%   After that, it is calling @read_meta, which is a dataset specific
 %   function. @read_meta reads all metadata files that've been found and 
 %   returns the results so that can be used to export the objects from the
 %   images.
@@ -129,7 +129,7 @@ function map = map_relations(ifields,data,map,curr_depth,idx)
 %       idxs=zeros(full_depth,1);
     end
     curr_depth=curr_depth+1;
-%% FILL MAP / GO RECCURSIVE
+%% FILL MAP / GO RECURSIVE
     field=ifields{curr_depth};
     for i=1:length(data)
         if curr_depth==1;
@@ -145,7 +145,7 @@ function map = map_relations(ifields,data,map,curr_depth,idx)
                     map(this) = idx;
                 end
             else
-                %Reccursion, go deeper
+                %Recursion, go deeper
                 map=map_relations(ifields,this,map,curr_depth,idx);
             end            
         end

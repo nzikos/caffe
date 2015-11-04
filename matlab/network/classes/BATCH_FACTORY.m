@@ -258,6 +258,12 @@ classdef BATCH_FACTORY < handle
         function data_out = input_normalization_function(obj,data_in)
             batch_size = size(data_in,4);
             switch obj.normalization_type
+                case 'subtract_means'
+                    if size(obj.batched_mean,4)~=batch_size
+                        obj.batched_mean=repmat(obj.mean,[1 1 1 batch_size]);
+                    end
+                    data_in =single(data_in);
+                    data_out=(data_in - obj.batched_mean);
                 case 'subtract_means_normalize_variances'
                     if size(obj.batched_mean,4)~=batch_size
                         obj.batched_mean=repmat(obj.mean,[1 1 1 batch_size]);

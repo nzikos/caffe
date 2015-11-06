@@ -21,7 +21,7 @@ model.load_objects();
 net_struct = NET_STRUCTURE(cache);
 net_struct.set_batch_size('train',128);
 net_struct.set_batch_size('validation',128);
-net_struct.set_batch_size('test',10);
+net_struct.set_batch_size('test',128);
 net_struct.set_input_object_dims(227,227,3);
 net_struct.set_labels_length(1);
 net_struct.add_CONV_layer   ('conv1',96,[11 11],[4 4],0,true,'gaussian',0,0.01,1,'constant',1,1,1);
@@ -71,10 +71,11 @@ net.caffe.init('train');
 %net.caffe.set_layer(5,random_bank_filters(3,3,384,256),0);
 
 net.batch_factory.set_async_queue_size(5);
-net.batch_factory.random_segmentation(1);            %frequency per batch [0-1]
-net.batch_factory.rotation([-20 20],0);              %Rotate 0% of batch with a random angle between [-20,20].
+net.batch_factory.crop(0.4);                             %frequency per batch [0-1]
+net.batch_factory.rotate([-20 20],0.3);              %Rotate 0% of batch with a random angle between [-20,20].
+net.batch_factory.skew([-0.35 0.35],0.3);
 net.batch_factory.projections(0);                    %Projections frequency(hardcoded params, TESTS PENDING)
-net.batch_factory.flipped(0.5);                      %Use horizontal flipped images during training
+net.batch_factory.use_flipped_samples(1);            %Use horizontal flipped images during training
 net.batch_factory.normalize_input('subtract_means');  %[X - E(D)]/std(D)
 %net.batch_factory.normalize_input('subtract_means_normalize_variances');  %[X - E(D)]/std(D)
 %net.batch_factory.normalize_input('zero_one_scale');
@@ -83,7 +84,7 @@ net.batch_factory.normalize_input('subtract_means');  %[X - E(D)]/std(D)
 net.set_batches_per_iter(1);                  %How many batches to perform 1 weight update 
 
 %net.set_validations_per_epoch(40);
-net.set_validation_interval(3800);
+net.set_validation_interval(3500);
 
 net.train.set_method('user_defined',{net.validation,net.exit_train});
 net.train.method.set_learning_params({0.015,0.9,0.5,0.0005,2,1});
@@ -97,7 +98,7 @@ net.validation.set_best_target('Average','top1')
 net.set_max_iterations(inf);                     %STOP parameter - What is the maximum size of epochs to trigger a stop
 net.set_snapshot_time(8*60);                     %Save a snapshot of the net every (time in minutes)
 net.set_display(200);                            %Display training stats every x iterations
-net.fetch_train_error(1);                  %Enable(1)/Disable(0) computation of train error to increase speed in case of latency due to caffe
+net.fetch_train_error(0);                  %Enable(1)/Disable(0) computation of train error to increase speed in case of latency due to caffe
 net.start();
 
 %% DEPLOY

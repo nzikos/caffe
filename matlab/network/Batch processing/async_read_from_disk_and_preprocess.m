@@ -27,13 +27,13 @@ function out = async_read_from_disk_and_preprocess(x)
 %
 % input_dims         : The dimensions of caffe input layer.
 %
-% flip_freq          : frequency of flipped objects
+% use_flipped        : use horizontally flipped objects or not (0/1).
 %
-% rnd_segments_ratio : The ratio of object segmentation inside the batch
+% crop_freq          : Ratio of objects random cropping per batch.
 %
 % rot_ratio          : The ratio of object rotation inside the batch
 %
-% rot_angle_bounds   : The bounds of the random angle during rotation in degrees.
+% rot_theta_bounds   : The bounds of the random theta during rotation in degrees.
 %
 %% Values returned
 % data    : The objects/images as HxWx3xN (where N is the batch size)
@@ -51,16 +51,18 @@ function out = async_read_from_disk_and_preprocess(x)
 java.lang.System.gc(); %FATAL MEMORY LEAK SOLVED
 
 %% PREPARE ATTRIBUTES
-paths                = x.paths;
-input_dims           = [x.input_dims.width x.input_dims.height]; %Remember inconsistency between matlab and caffe dimensions
+paths        = x.paths;
+input_dims   = [x.input_dims.width x.input_dims.height]; %Remember inconsistency between matlab and caffe dimensions
 
-flip_freq            = x.flip_freq;
+use_flipped  = x.use_flipped;
 
-rnd_segments_freq    = x.rnd_segments_freq;
-rots_freq            = x.rot_freq;
-projs_freq    = x.projections_freq;
+crop_freq    = x.crop_freq;
+rots_freq    = x.rot_freq;
+skew_freq    = x.skew_freq;
+projs_freq   = x.projections_freq;
 
-rot_angle_bounds     = x.rot_angle_bounds;
+rot_theta_bounds  = x.rot_theta_bounds;
+skew_bounds = x.skew_bounds;
 
 batch_size = length(paths);
 %% EXTRACT OBJECTS
@@ -73,11 +75,14 @@ end
 %% Convert frequencies to batch regions
 inner_counter = 0;
 
-rnd_segs_reg      = [inner_counter+1 ; inner_counter+round(batch_size*rnd_segments_freq)];
-inner_counter     = inner_counter +round(batch_size*rnd_segments_freq);
+crops_reg         = [inner_counter+1 ; inner_counter+round(batch_size*crop_freq)];
+inner_counter     = inner_counter +round(batch_size*crop_freq);
 
 rots_reg          = [inner_counter+1 ; inner_counter+round(batch_size*rots_freq)];
 inner_counter     = inner_counter +round(batch_size*rots_freq);
+
+skew_reg          = [inner_counter+1 ; inner_counter+round(batch_size*skew_freq)];
+inner_counter     = inner_counter +round(batch_size*skew_freq);
 
 projs_reg         = [inner_counter+1 ; inner_counter+round(batch_size*projs_freq)];
 inner_counter     = inner_counter +round(batch_size*projs_freq);
@@ -85,64 +90,48 @@ inner_counter     = inner_counter +round(batch_size*projs_freq);
 non_processed_reg = [inner_counter+1 ; batch_size];
 
 %% PERFORM PROCESSING
-object_dims = size(data);
-if(rnd_segs_reg(1)<=rnd_segs_reg(2))
+if crops_reg(1)<=crops_reg(2)
+    object_dims = size(data);    
     if object_dims(1)~=input_dims(1) || object_dims(2)~=input_dims(2)
-        processed_data = get_random_segments(data(:,:,:,rnd_segs_reg(1):rnd_segs_reg(2)),input_dims);
+        processed_data(:,:,:,crops_reg(1):crops_reg(2)) = get_random_crops(data(:,:,:,crops_reg(1):crops_reg(2)),input_dims);
     else
         APP_LOG('error',0,'Identical dimensions detected while extracting random segments');
         APP_LOG('error',0,'Object dimensions are [%d,%d]',object_dims(1),object_dims(2));
-        APP_LOG('error_last',0,'Network dimensions are [%d,%d]',input_dims(1),input_dims(2));
+        APP_LOG('last_error',0,'Network dimensions are [%d,%d]',input_dims(1),input_dims(2));
     end
 end
-if (rots_reg(1)<=rots_reg(2))
-    theta = rot_angle_bounds(1) + (rot_angle_bounds(2)-rot_angle_bounds(1))*rand(1,1);
-    temp_data = imrotate(data(:,:,:,rots_reg(1):rots_reg(2)),theta,'bilinear','crop');
-    %Resize to fit network input
-     if object_dims(1)~=input_dims(1) || object_dims(2)~=input_dims(2)
-         processed_data(:,:,:,rots_reg(1):rots_reg(2))=get_resized_objects(temp_data,input_dims);
-     else
-         processed_data(:,:,:,rots_reg(1):rots_reg(2))=temp_data;
-     end
-     clear temp_data;
+
+if rots_reg(1)<=rots_reg(2)
+    processed_data(:,:,:,rots_reg(1):rots_reg(2)) = get_random_rotations(rot_theta_bounds,data(:,:,:,rots_reg(1):rots_reg(2)),input_dims);
 end
-if (projs_reg(1)<=projs_reg(2))
-    processed_data(:,:,:,projs_reg(1):projs_reg(2))=get_projections(data(:,:,:,projs_reg(1):projs_reg(2)),input_dims,rot_angle_bounds);
+
+if skew_reg(1)<=skew_reg(2)
+    processed_data(:,:,:,skew_reg(1):skew_reg(2)) = get_random_skews(skew_bounds,data(:,:,:,skew_reg(1):skew_reg(2)),input_dims);
 end
-%% PASS ANY LEFTOVERS
+
+if projs_reg(1)<=projs_reg(2)
+    processed_data(:,:,:,projs_reg(1):projs_reg(2))=get_projections(data(:,:,:,projs_reg(1):projs_reg(2)),input_dims,rot_theta_bounds);
+end
+
 if non_processed_reg(1)<=non_processed_reg(2)
     processed_data(:,:,:,non_processed_reg(1):non_processed_reg(2)) = get_resized_objects(data(:,:,:,non_processed_reg(1):non_processed_reg(2)),input_dims);
 end
 clear data;
 
 %% PERFORM HORIZONTAL FLIPPING
-if(flip_freq>0)
-    rnd_flip_idxs=randperm(batch_size,floor(flip_freq*batch_size));
+if(use_flipped)
+    rnd_flip_idxs=randperm(batch_size,floor(0.5*batch_size));
     processed_data(:,:,:,rnd_flip_idxs)=flip(processed_data(:,:,:,rnd_flip_idxs),1); %Width is 1st dimension, so we are actually performing vertical flip on a 90degrees rotated object
 end
+
 %% OUTPUT
 out{1,1}=processed_data;
 out{2,1}=uids;
 end
 
-%% PROCESSING TRAINING BATCH METHODS
-function output_data = get_random_segments(data,dims)
-object_dims = size(data(:,:,1,1));
-for i=size(data,4):-1:1
-    rnd_height = uint32((object_dims(1)-dims(1))*rand());
-    rnd_width  = uint32((object_dims(2)-dims(2))*rand());
-    output_data(:,:,:,i) = data(rnd_height+1:rnd_height+dims(1),rnd_width+1:rnd_width+dims(2),:,i);
-end
-end
+function output_data = get_projections(data,dims,rot_theta_bounds)
 
-function output_data = get_resized_objects(data,dims)
-output_data=imresize(data,dims,'bilinear','antialiasing',false);
-end
-
-
-function output_data = get_projections(data,dims,rot_angle_bounds)
-
-theta = rot_angle_bounds(1) + (rot_angle_bounds(2)-rot_angle_bounds(1))*rand(1,1);
+theta = rot_theta_bounds(1) + (rot_theta_bounds(2)-rot_theta_bounds(1))*rand(1,1);
 
 if (rand(1,1)>0.5)
     randomValue1 = (-0.002 + (0.0047)*rand(1,1));

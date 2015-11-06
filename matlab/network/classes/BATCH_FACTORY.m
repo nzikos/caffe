@@ -5,12 +5,16 @@ classdef BATCH_FACTORY < handle
     %       use_mean_std           : Use mean and std extracted from
     %                                training set in order to normalize
     %                                samples. mean and std dims are [HxWxD]
-    %       rnd_segments_freq     : Ratio of objects random segmentation per
-    %                                batch
-    %       rot_freq               : Ratio of objects rotation per batch
-    %       projections_freq       : Frequency of projected objects per batch
+    %       crop_freq              : Ratio of objects random cropping per batch.
+    %       rot_freq               : Ratio of objects rotation per batch.
+    %       skew_freq              : Ratio of skewed objects per batch.
+    %       projections_freq       : Ratio of projected objects per batch.
     %       
-    %       rot_angle_bounds       : [minimum_angle maximum_angle] in degrees
+    %       rot_theta_bounds       : [minimum_theta maximum_theta] in degrees.
+    %       skew_bounds      : [minimum_theta maximum_theta] in degrees.
+    %
+    %       use_flipped            : use horizontally flipped objects or not (0/1).
+    %
     %
     %       train_objects          : pool of objects scheduled for training
     %       train_objects_pos      : index for train_objects
@@ -44,17 +48,19 @@ classdef BATCH_FACTORY < handle
         net_structure;
 
         normalization_type = 'zero_one_scale';
-        mean              = [];
-        batched_mean   = [];
-        std               = [];
-        batched_std    = [];
+        mean             = [];
+        batched_mean     = [];
+        std              = [];
+        batched_std      = [];
         
-        rnd_segments_freq = 0;        
-        rot_freq          = 0;
-        projections_freq  = 0;
-        flip_freq         = 0.5;
+        crop_freq        = 0;
+        skew_freq        = 0;
+        rot_freq         = 0;
+        projections_freq = 0;
+        use_flipped      = 1;
         
-        rot_angle_bounds = [0 0];
+        rot_theta_bounds = [0 0];
+        skew_bounds      = [0 0];        
                 
         train_objects          = [];
         train_objects_pool     = [];
@@ -136,24 +142,33 @@ classdef BATCH_FACTORY < handle
         end
         
         %% SET training objects flipping attribute
-        function flipped(obj,flip_freq)
-            obj.flip_freq = flip_freq;
+        function use_flipped_samples(obj,use_flipped)
+            obj.use_flipped = use_flipped;
         end
         
-        %% SET training objects random segmentation attributes
-        function random_segmentation(obj,freq)
-            obj.rnd_segments_freq = freq;
+        %% SET training objects random cropping attributes
+        function crop(obj,freq)
+            obj.crop_freq = freq;
         end
+
+        %% SET training objects random skewing attributes
+        function skew(obj,bounds,freq)
+            obj.skew_bounds = bounds;            
+            obj.skew_freq   = freq;
+        end        
         
-        %% SET training objects rotation attributes
-        function rotation(obj,theta_bounds,freq)
-             obj.rot_angle_bounds = theta_bounds;
+        %% SET training objects random rotation attributes
+        function rotate(obj,theta_bounds,freq)
+             obj.rot_theta_bounds = theta_bounds;
              obj.rot_freq = freq;
         end
         
         %% SET Use projections of objects
         function projections(obj,freq)
             obj.projections_freq = freq;
+            if freq~=0
+                APP_LOG('last_error','Projections are work in progress');
+            end
         end
         
         %% Paths assignment to workers
@@ -233,16 +248,18 @@ classdef BATCH_FACTORY < handle
         end
         
         function async_load_current_train_batch(obj,i)
-            x.paths                    = obj.train_curr_paths{i};
-            x.input_dims.height        = obj.net_structure.object_height;
-            x.input_dims.width         = obj.net_structure.object_width;
-            x.flip_freq                = obj.flip_freq;
-            x.rnd_segments_freq        = obj.rnd_segments_freq;
-            x.rot_freq                 = obj.rot_freq;
-            x.projections_freq         = obj.projections_freq;
+            x.paths             = obj.train_curr_paths{i};
+            x.input_dims.height = obj.net_structure.object_height;
+            x.input_dims.width  = obj.net_structure.object_width;
+            x.use_flipped       = obj.use_flipped;
+            x.crop_freq         = obj.crop_freq;
+            x.skew_freq         = obj.skew_freq;
+            x.rot_freq          = obj.rot_freq;
+            x.projections_freq  = obj.projections_freq;
             
-            x.rot_angle_bounds         = obj.rot_angle_bounds;
-            obj.train_queue{i}         = parfeval(@async_read_from_disk_and_preprocess,1,x);
+            x.rot_theta_bounds  = obj.rot_theta_bounds;
+            x.skew_bounds       = obj.skew_bounds;
+            obj.train_queue{i}  = parfeval(@async_read_from_disk_and_preprocess,1,x);
 %           out = async_read_from_disk_and_preprocess(x);
         end
 

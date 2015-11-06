@@ -94,20 +94,20 @@ classdef CAFFE < handle
         end
         
         %% SETTERS
-        function set_use_gpu(obj,arg_use_gpu,device_id)
-            if arg_use_gpu==0 || arg_use_gpu==1
-                obj.use_gpu = arg_use_gpu;
+        function set_use_gpu(obj,device_id)
+            if device_id>=0
+                obj.use_gpu = 1;
+                %gpuDevice([]); %cleanup
+                %            obj.action.reset();
+                g = parallel.gpu.GPUDevice.getDevice(device_id+1);
+                if ~g.DeviceSelected
+                    gpuDevice(device_id+1); %select / handle_erroneous_id
+                    caffe('set_device',device_id); %set to caffe
+                end
+                APP_LOG('info','GPU Device set to %s',g.Name);
             else
-                APP_LOG('last_error','Valid inputs for use_gpu are 0 or 1');
+                obj.use_gpu = 0;
             end
-            %gpuDevice([]); %cleanup
-%            obj.action.reset();
-            g = parallel.gpu.GPUDevice.getDevice(device_id+1);
-            if ~g.DeviceSelected
-                gpuDevice(device_id+1); %select / handle_erroneous_id                
-                caffe('set_device',device_id); %set to caffe
-            end
-            APP_LOG('info','GPU Device set to %s',g.Name);                        
         end
         
         function set_phase(obj,phase)

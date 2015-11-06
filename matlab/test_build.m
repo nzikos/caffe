@@ -59,7 +59,7 @@ net = network();
 net.set_model(model);
 clear model;
 %% SET CAFFE
-net.caffe.set_use_gpu(1,0);                                % (enable/disable, device_id) device_id is zero-based
+net.caffe.set_use_gpu(0);                                %device_id (zero-based) if device_id < 0 then CPU execution
 net.caffe.set_structure(net_struct);
 net.caffe.init('train');
 

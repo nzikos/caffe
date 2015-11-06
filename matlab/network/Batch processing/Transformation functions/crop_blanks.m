@@ -20,11 +20,11 @@ v=ceil(v);
 min_v_h = sort(v(:,1));
 min_v_w = sort(v(:,2));
 
-y_1 = floor(abs(min_v_h(1)-min_v_h(2))/2)+1;
-y_2 = floor(abs(min_v_h(3)-min_v_h(4))/2) + min_v_h(3);
+y_1 = floor((min_v_h(2)-min_v_h(1))/2)+1;
+y_2 = floor((min_v_h(4)-min_v_h(3))/2) + min_v_h(3);
 
-x_1 = floor(abs(min_v_w(1)-min_v_w(2))/2)+1;
-x_2 = floor(abs(min_v_w(3)-min_v_w(4))/2) + min_v_w(3);
+x_1 = floor((min_v_w(2)-min_v_w(1))/2)+1;
+x_2 = floor((min_v_w(4)-min_v_w(3))/2) + min_v_w(3);
 
 data_out = data_in(x_1:x_2,y_1:y_2,:,:);
 end

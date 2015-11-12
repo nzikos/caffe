@@ -88,7 +88,7 @@ methods
                     sum_grads = rcaffe.action.training_iter(batch);
                 otherwise
                     this_grads= rcaffe.action.training_iter(batch);
-                    for j=1:rcaffe.structure.n_layers
+                    for j=1:length(sum_grads)
                         for k=1:length(sum_grads(j).diff)
                             sum_grads(j).diff{k}=sum_grads(j).diff{k}+this_grads(j).diff{k};
                         end

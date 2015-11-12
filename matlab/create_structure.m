@@ -1,45 +1,45 @@
-clear all;
+net_struct=NET_STRUCTURE(pwd);
 
-net.caffe.structure=NET_STRUCTURE(pwd);
+net_struct.set_batch_size('train',128);
+net_struct.set_batch_size('validation',128);
+net_struct.set_batch_size('test',128);
+net_struct.set_input_object_dims(227,227,3);
 
-net.caffe.structure.set_batch_size('train',64);
-net.caffe.structure.set_batch_size('validation',128);
-net.caffe.structure.set_batch_size('test',10);
-net.caffe.structure.set_input_object_dims(3,227,227);
-net.caffe.structure.set_labels_length(1);
-net.caffe.structure.add_CONV_layer   ('conv1',96,11,0,4,true,'gaussian',0.01,1,'constant',0,2);
-net.caffe.structure.add_ACTIV_layer  ('relu1','relu');
-%net.caffe.structure.add_LRN_layer    ('lrn1' ,3,0.0000005,0.75,'within_channel');
-net.caffe.structure.add_POOL_layer   ('pool1','MAX',3,0,2);
+%LAYER-1
+net_struct.add_layer('Convolution' ,{96,11,4,0},{[1,2],{true,[1,2]}},{{'gaussian',[0 0.01]},{'constant',1}});
+net_struct.add_layer('PReLU'       ,{false},{[1 0]},{'constant',0.25});
+net_struct.add_layer('Pooling'     ,{'MAX',3,2,0});
+%LAYER-2
+net_struct.add_layer('MVN'         ,{false,true});
+net_struct.add_layer('Convolution' ,{256,5,1,2},{[1,2],{true,[1,2]}},{{'gaussian',[0 0.01]},{'constant',1}});
+net_struct.add_layer('PReLU'       ,{false},{[1 0]},{'constant',0.25});
+net_struct.add_layer('Pooling'     ,{'MAX',3,2,0});
+%LAYER-3
+net_struct.add_layer('MVN'         ,{false,true});
+net_struct.add_layer('Convolution' ,{384,3,1,1},{[1,2],{true,[1,2]}},{{'gaussian',[0 0.01]},{'constant',1}});
+net_struct.add_layer('PReLU'       ,{false},{[1 0]},{'constant',0.25});
+%LAYER-4
+net_struct.add_layer('MVN'         ,{false,true});
+net_struct.add_layer('Convolution' ,{384,3,1,1},{[1,2],{true,[1,2]}},{{'gaussian',[0 0.01]},{'constant',1}});
+net_struct.add_layer('PReLU'       ,{true},{[1 0]},{'constant',0.25});
+%LAYER-5
+net_struct.add_layer('MVN'         ,{false,true});
+net_struct.add_layer('Convolution' ,{256,3,1,1},{[1,2],{true,[1,2]}},{{'gaussian',[0 0.01]},{'constant',1}});
+net_struct.add_layer('PReLU'       ,{false},{[1 0]},{'constant',0.25});
+net_struct.add_layer('Pooling'     ,{'MAX',3,2,0});
+%LAYER-6
+net_struct.add_layer('InnerProduct',{4096},{[1,1],{true,[1,1]}},{{'gaussian',[0 0.01]},{'constant',1}});
+net_struct.add_layer('Dropout'     ,{0.5});
+net_struct.add_layer('Activation'  ,{'ReLU'});
+%LAYER-7
+net_struct.add_layer('InnerProduct',{4096},{[1,1],{true,[1,1]}},{{'gaussian',[0 0.01]},{'constant',1}});
+net_struct.add_layer('Dropout'     ,{0.5});
+net_struct.add_layer('Activation'  ,{'ReLU'});
+%LAYER-8
+net_struct.add_layer('InnerProduct',{200},{[1,1],{true,[1,1]}},{{'gaussian',[0 0.01]},{'constant',1}});
+net_struct.add_layer('Output'      ,{'SoftmaxWithLoss'});
 
-net.caffe.structure.add_CONV_layer   ('conv2',256,5,2,1,true,'gaussian',0.01,1,'constant',0,2);
-net.caffe.structure.add_ACTIV_layer  ('relu2','relu');
-%net.caffe.structure.add_LRN_layer    ('lrn2' ,3,0.0000005,0.75,'within_channel');
-net.caffe.structure.add_POOL_layer   ('pool2','MAX',3,0,2);
-
-net.caffe.structure.add_CONV_layer   ('conv3',384,3,1,1,true,'gaussian',0.01,1,'constant',0,2);
-net.caffe.structure.add_ACTIV_layer  ('relu3','relu');
-
-net.caffe.structure.add_CONV_layer   ('conv4',384,3,1,1,true,'gaussian',0.01,1,'constant',0,2);
-net.caffe.structure.add_ACTIV_layer  ('relu4','relu');
-
-net.caffe.structure.add_CONV_layer   ('conv5',256,3,1,1,true,'gaussian',0.01,1,'constant',0,2);
-net.caffe.structure.add_ACTIV_layer  ('relu5','relu');
-net.caffe.structure.add_POOL_layer   ('pool5','MAX',3,0,2);
-
-net.caffe.structure.add_IP_layer     ('fc6'  ,4096,true,'gaussian',0.01,1,'constant',0,2);
-net.caffe.structure.add_ACTIV_layer  ('relu6','relu');
-net.caffe.structure.add_DROPOUT_layer('drop6',0.5);
-
-net.caffe.structure.add_IP_layer     ('fc7'  ,4096,true,'gaussian',0.01,1,'constant',0,2);
-net.caffe.structure.add_ACTIV_layer  ('relu7','relu');
-net.caffe.structure.add_DROPOUT_layer('drop7',0.5);
-
-net.caffe.structure.add_IP_layer     ('fc8'  ,200,true,'gaussian',0.01,1,'constant',0,2); 
-
-net.caffe.structure.add_OUTPUT_ERROR_layer('SOFTMAX_LOSS');
-
-net.caffe.structure.validate_structure();
-net.caffe.structure.create_prototxt('train')
-net.caffe.structure.create_prototxt('validation')
-net.caffe.structure.create_prototxt('test')
+net_struct.validate_structure();
+net_struct.create_prototxt('train')
+%net_struct.create_prototxt('validation')
+net_struct.create_prototxt('test')

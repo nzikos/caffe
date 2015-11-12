@@ -1,0 +1,286 @@
+name: "train"
+input: "data"
+input_dim: 128
+input_dim: 3
+input_dim: 227
+input_dim: 227
+input: "label"
+input_dim: 128
+input_dim: 1
+input_dim: 1
+input_dim: 1
+layer {
+	name: "conv_1_1"
+	type: "Convolution"
+	bottom: "data"
+	top: "conv_1_1"
+	convolution_param {
+		num_output: 96
+		kernel_h: 11
+		kernel_w: 11
+		stride_h: 4
+		stride_w: 4
+		pad_h: 0
+		pad_w: 0
+	}
+}
+layer {
+	name: "prelu_2_1"
+	type: "PReLU"
+	bottom: "conv_1_1"
+	top: "prelu_2_1"
+	prelu_param {
+		channel_shared: false
+	}
+}
+layer {
+	name: "pool_2_2"
+	type: "Pooling"
+	bottom: "prelu_2_1"
+	top: "pool_2_2"
+	pooling_param {
+		method: MAX
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 2
+		stride_w: 2
+		pad_h: 0
+		pad_w: 0
+	}
+}
+layer {
+	name: "MVN_2_3"
+	type: "MVN"
+	bottom: "pool_2_2"
+	top: "MVN_2_3"
+	mvn_param {
+		normalize_variance: false
+		across_channels: true
+	}
+}
+layer {
+	name: "conv_3_1"
+	type: "Convolution"
+	bottom: "MVN_2_3"
+	top: "conv_3_1"
+	convolution_param {
+		num_output: 256
+		kernel_h: 5
+		kernel_w: 5
+		stride_h: 1
+		stride_w: 1
+		pad_h: 2
+		pad_w: 2
+	}
+}
+layer {
+	name: "prelu_4_1"
+	type: "PReLU"
+	bottom: "conv_3_1"
+	top: "prelu_4_1"
+	prelu_param {
+		channel_shared: false
+	}
+}
+layer {
+	name: "pool_4_2"
+	type: "Pooling"
+	bottom: "prelu_4_1"
+	top: "pool_4_2"
+	pooling_param {
+		method: MAX
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 2
+		stride_w: 2
+		pad_h: 0
+		pad_w: 0
+	}
+}
+layer {
+	name: "MVN_4_3"
+	type: "MVN"
+	bottom: "pool_4_2"
+	top: "MVN_4_3"
+	mvn_param {
+		normalize_variance: false
+		across_channels: true
+	}
+}
+layer {
+	name: "conv_5_1"
+	type: "Convolution"
+	bottom: "MVN_4_3"
+	top: "conv_5_1"
+	convolution_param {
+		num_output: 384
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 1
+		stride_w: 1
+		pad_h: 1
+		pad_w: 1
+	}
+}
+layer {
+	name: "prelu_6_1"
+	type: "PReLU"
+	bottom: "conv_5_1"
+	top: "prelu_6_1"
+	prelu_param {
+		channel_shared: false
+	}
+}
+layer {
+	name: "MVN_6_2"
+	type: "MVN"
+	bottom: "prelu_6_1"
+	top: "MVN_6_2"
+	mvn_param {
+		normalize_variance: false
+		across_channels: true
+	}
+}
+layer {
+	name: "conv_7_1"
+	type: "Convolution"
+	bottom: "MVN_6_2"
+	top: "conv_7_1"
+	convolution_param {
+		num_output: 384
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 1
+		stride_w: 1
+		pad_h: 1
+		pad_w: 1
+	}
+}
+layer {
+	name: "prelu_8_1"
+	type: "PReLU"
+	bottom: "conv_7_1"
+	top: "prelu_8_1"
+	prelu_param {
+		channel_shared: true
+	}
+}
+layer {
+	name: "MVN_8_2"
+	type: "MVN"
+	bottom: "prelu_8_1"
+	top: "MVN_8_2"
+	mvn_param {
+		normalize_variance: false
+		across_channels: true
+	}
+}
+layer {
+	name: "conv_9_1"
+	type: "Convolution"
+	bottom: "MVN_8_2"
+	top: "conv_9_1"
+	convolution_param {
+		num_output: 256
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 1
+		stride_w: 1
+		pad_h: 1
+		pad_w: 1
+	}
+}
+layer {
+	name: "prelu_10_1"
+	type: "PReLU"
+	bottom: "conv_9_1"
+	top: "prelu_10_1"
+	prelu_param {
+		channel_shared: false
+	}
+}
+layer {
+	name: "pool_10_2"
+	type: "Pooling"
+	bottom: "prelu_10_1"
+	top: "pool_10_2"
+	pooling_param {
+		method: MAX
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 2
+		stride_w: 2
+		pad_h: 0
+		pad_w: 0
+	}
+}
+layer {
+	name: "ip_11_1"
+	type: "InnerProduct"
+	bottom: "pool_10_2"
+	top: "ip_11_1"
+	inner_product_param {
+		num_output: 4096
+	}
+}
+layer {
+	name: "drop_11_2_1"
+	type: "Dropout"
+	bottom: "ip_11_1"
+	top: "ip_11_1"
+	dropout_param {
+		dropout_ratio: 0.500000000000
+	}
+}
+layer {
+	name: "relu_11_3"
+	type: "ReLU"
+	bottom: "ip_11_1"
+	top: "ip_11_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "ip_12_1"
+	type: "InnerProduct"
+	bottom: "ip_11_1"
+	top: "ip_12_1"
+	inner_product_param {
+		num_output: 4096
+	}
+}
+layer {
+	name: "drop_12_2_1"
+	type: "Dropout"
+	bottom: "ip_12_1"
+	top: "ip_12_1"
+	dropout_param {
+		dropout_ratio: 0.500000000000
+	}
+}
+layer {
+	name: "relu_12_3"
+	type: "ReLU"
+	bottom: "ip_12_1"
+	top: "ip_12_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "ip_13_1"
+	type: "InnerProduct"
+	bottom: "ip_12_1"
+	top: "ip_13_1"
+	inner_product_param {
+		num_output: 200
+	}
+}
+layer {
+	name: "output_13_2"
+	type: "SoftmaxWithLoss"
+	bottom: "ip_13_1"
+	bottom: "label"
+	top: "output_13_2"
+	}

@@ -481,8 +481,10 @@ static void do_set_params(const mxArray* mx_layers) {
 					for (int idim = 0; idim < dim_num; ++idim)
 						input_dims[idim] = input_blob_dims[idim];
 					if (layer_blobs[k]->width() != (int)input_dims[0] || layer_blobs[k]->height() != (int)input_dims[1] || layer_blobs[k]->channels() != (int)input_dims[2] || layer_blobs[k]->num() != (int)input_dims[3]){
-						mexPrintf("%s blobs %d dims don't match, ignore\n", layer_name, k);
-						continue;
+						if(layer_blobs[k]->count()!=1){
+							mexPrintf("%s blobs %d dims don't match, ignore\n", layer_name, k);
+							continue;
+						}
 					}
 					float* params_ptr = reinterpret_cast<float*>(mxGetPr(mx_params));					
 					caffe_copy(layer_blobs[k]->count(), params_ptr, layer_blobs[k]->mutable_cpu_data());
@@ -492,8 +494,10 @@ static void do_set_params(const mxArray* mx_layers) {
 					const size_t *input_dims 	= mxGPUGetDimensions(mx_params);
 					
 					if (layer_blobs[k]->width() != (int)input_dims[0] || layer_blobs[k]->height() != (int)input_dims[1] || layer_blobs[k]->channels() != (int)input_dims[2] || layer_blobs[k]->num() != (int)input_dims[3]){
-						mexPrintf("%s blobs %d dims don't match, ignore\n", layer_name, k);
-						continue;
+						if(layer_blobs[k]->count()!=1){
+							mexPrintf("%s blobs %d dims don't match, ignore\n", layer_name, k);
+							continue;
+						}
 					}
 					float const* params_ptr = (float const*)(mxGPUGetDataReadOnly(mx_params));					
 					caffe_copy(layer_blobs[k]->count(), params_ptr, layer_blobs[k]->mutable_gpu_data());

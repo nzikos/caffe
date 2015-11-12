@@ -5,7 +5,7 @@ function check_meta(data,rmap,set)
 %       1. Number of classes between sets must be the same.
 %       2. one-to-one correspondence rule for classes of sets.
 
-APP_LOG('info','Checking metadata robustness between sets');
+APP_LOG('info','Checking metadata relevance between sets');
 
 %% INITIALIZE
 set_size=numel(set);

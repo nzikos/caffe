@@ -131,8 +131,8 @@ classdef BATCH_FACTORY < handle
                 otherwise
                     obj.normalization_type = arg_type;
                     if(numel(obj.mean)~=0 && numel(obj.std)~=0)
-                        obj.mean       = single(imresize(obj.mean,[obj.net_structure.object_width obj.net_structure.object_height],'bilinear','antialiasing',false));
-                        obj.std        = single(imresize(obj.std ,[obj.net_structure.object_width obj.net_structure.object_height],'bilinear','antialiasing',false));                    
+                        obj.mean       = single(imresize(obj.mean,[obj.net_structure.objects_size(2) obj.net_structure.objects_size(1)],'bilinear','antialiasing',false));
+                        obj.std        = single(imresize(obj.std ,[obj.net_structure.objects_size(2) obj.net_structure.objects_size(1)],'bilinear','antialiasing',false));
                     else
                         APP_LOG('warning','Metadata have not computed mean and std from current dataset. Falling back to zero_one_scale');
                         obj.normalization_type = 'zero_one_scale';
@@ -206,7 +206,7 @@ classdef BATCH_FACTORY < handle
             out=fetchOutputs(obj.train_queue{obj.train_queue_idx});%fetch old work
 
             out{1,1}=obj.input_normalization_function(out{1,1});
-            out{2,1}=single(out{2,1});
+            out{2,1}=obj.net_structure.layers{end}.transform_labels(out{2,1});
             
             obj.async_load_current_train_batch(obj.train_queue_idx); %assign new work
             
@@ -249,8 +249,8 @@ classdef BATCH_FACTORY < handle
         
         function async_load_current_train_batch(obj,i)
             x.paths             = obj.train_curr_paths{i};
-            x.input_dims.height = obj.net_structure.object_height;
-            x.input_dims.width  = obj.net_structure.object_width;
+            x.input_dims.height = obj.net_structure.objects_size(1);
+            x.input_dims.width  = obj.net_structure.objects_size(2);
             x.use_flipped       = obj.use_flipped;
             x.crop_freq         = obj.crop_freq;
             x.skew_freq         = obj.skew_freq;

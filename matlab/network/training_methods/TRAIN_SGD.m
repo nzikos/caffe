@@ -18,12 +18,12 @@ classdef TRAIN_SGD < handle
         function obj = TRAIN_SGD(caffe)
             obj.caffe= caffe;
         end
-        function obj = init(obj)
-            for i=1:obj.caffe.structure.n_layers
-                for j=1:length(obj.caffe.params(i).data) %weight + bias / weights
-                    obj.Vt(i).data{j}=zeros(size(obj.caffe.params(i).data{j}));
-                end
-            end
+        function init(obj)
+             for i=1:length(obj.caffe.net_structure.params)
+                 for j=1:length(obj.caffe.net_structure.params(i).data)
+                     obj.Vt(i).data{j}=zeros(size(obj.caffe.net_structure.params(i).data{j}));
+                 end
+             end
             obj.curr_steps = 1;
         end
         function obj = set_learning_params(obj,options)          
@@ -65,15 +65,14 @@ classdef TRAIN_SGD < handle
 %               obj.m =obj.m*obj.gamma + 1 - obj.gamma;
             end
             
-            lr_mult      = obj.caffe.structure.lr_mult;
-            n_layers     = obj.caffe.structure.n_layers;
-            for i=1:n_layers
-                for j=1:length(obj.caffe.params(i).data) %weight + bias / weights
-                    %local_lr = lr * local_lr_mult;
-                    %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
-                    local_lr = obj.lr * lr_mult{i,j};
-                    obj.Vt(i).data{j}=obj.m * obj.Vt(i).data{j} - (local_lr/bpi) * sum_grads(i).diff{j} - obj.wd*local_lr*obj.caffe.params(i).data{j};
-                    obj.caffe.params(i).data{j}=obj.caffe.params(i).data{j}+obj.Vt(i).data{j};
+            local_lr     = obj.caffe.net_structure.lr_mult .* obj.lr;
+            local_wd     = obj.caffe.net_structure.wd_mult .* obj.wd;
+            local_m      = obj.caffe.net_structure.m_mult  .* obj.m;
+            for i=1:length(sum_grads)
+                for j=1:length(obj.caffe.net_structure.params(i).data) %weight + bias / weights
+                    
+                    obj.Vt(i).data{j}=local_m(i,j) * obj.Vt(i).data{j} - (local_lr(i,j)/bpi) * sum_grads(i).diff{j} - local_wd(i,j)*local_lr(i,j)*obj.caffe.net_structure.params(i).data{j};
+                    obj.caffe.net_structure.params(i).data{j}=obj.caffe.net_structure.params(i).data{j}+obj.Vt(i).data{j};
                 end
             end
             clear grads;

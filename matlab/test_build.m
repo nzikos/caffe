@@ -17,77 +17,75 @@ model.objects.compute_mean_std(1);
 
 model.load_objects();
 
+% s = RandStream('mt19937ar','Seed','shuffle');
+% RandStream.setGlobalStream(s);
+
 %% SET NETWORK STRUCTURE
 net_struct = NET_STRUCTURE(cache);
 net_struct.set_batch_size('train',128);
 net_struct.set_batch_size('validation',128);
 net_struct.set_batch_size('test',128);
-net_struct.set_input_object_dims(227,227,3);
-net_struct.set_labels_length(1);
-net_struct.add_CONV_layer   ('conv1',96,[11 11],[4 4],0,true,'gaussian',0,0.01,1,'constant',1,1,1);
-net_struct.add_ACTIV_layer  ('relu1','relu');
-%net_struct.add_LRN_layer    ('lrn1' ,3,0.00005,0.75,'within_channel');
-net_struct.add_POOL_layer   ('pool1','MAX',[3 3],2,[0 0]);
-net_struct.add_MVN_layer    ('mvn1','false','true');
-net_struct.add_CONV_layer   ('conv2',256,5,1,2,true,'gaussian',0,0.01,1,'constant',0,0,1);
-net_struct.add_ACTIV_layer  ('relu2','relu');
-%net_struct.add_LRN_layer    ('lrn2' ,3,0.00005,0.75,'within_channel');
-net_struct.add_POOL_layer   ('pool2','MAX',3,2,0);
-net_struct.add_MVN_layer    ('mvn2','false','true');
-net_struct.add_CONV_layer   ('conv3',384,3,1,1,true,'gaussian',0,0.01,1,'constant',0,0,1);
-net_struct.add_ACTIV_layer  ('relu3','relu');
-net_struct.add_MVN_layer    ('mvn3','false','true');
-net_struct.add_CONV_layer   ('conv4',384,3,1,1,true,'gaussian',0,0.01,1,'constant',0,0,1);
-net_struct.add_ACTIV_layer  ('relu4','relu');
-net_struct.add_MVN_layer    ('mvn4','false','true');
-net_struct.add_CONV_layer   ('conv5',256,3,1,1,true,'gaussian',0,0.01,1,'constant',0,0,1);
-net_struct.add_ACTIV_layer  ('relu5','relu');
-net_struct.add_POOL_layer   ('pool5','MAX',3,2,0);
-net_struct.add_MVN_layer    ('mvn5','true','true');
-net_struct.add_IP_layer     ('fc6'  ,4096,true,'gaussian',0,0.01,1,'constant',0,0,1);
-net_struct.add_ACTIV_layer  ('relu6','relu');
-net_struct.add_DROPOUT_layer('drop6',0.7);
-net_struct.add_MVN_layer    ('mvn6','true','true');
-net_struct.add_IP_layer     ('fc7'  ,4096,true,'gaussian',0,0.01,1,'constant',0,0,1);
-net_struct.add_ACTIV_layer  ('relu7','relu');
-net_struct.add_DROPOUT_layer('drop7',0.7);
-net_struct.add_IP_layer     ('fc8'  ,200,true,'gaussian',0,0.01,1,'constant',0,0,1); 
-net_struct.add_OUTPUT_ERROR_layer('SOFTMAX_LOSS');
+net_struct.set_objects_dims(227,227,3);
+
+%LAYER-1
+net_struct.add_layer('Convolution' ,{96,11,4,0,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
+net_struct.add_layer('PReLU'       ,{false},{[0.5,0.1, 0]},{'constant',0.25});
+net_struct.add_layer('Pooling'     ,{'MAX',3,2,0});
+%LAYER-2
+net_struct.add_layer('MVN'         ,{true,true});
+net_struct.add_layer('Convolution' ,{256,5,1,2,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
+net_struct.add_layer('PReLU'       ,{false},{[0.5,0.1, 0]},{'constant',0.25});
+net_struct.add_layer('Pooling'     ,{'MAX',3,2,0});
+%LAYER-3
+net_struct.add_layer('MVN'         ,{true,true});
+net_struct.add_layer('Convolution' ,{384,3,1,1,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
+net_struct.add_layer('PReLU'       ,{false},{[0.5,0.1, 0]},{'constant',0.25});
+%LAYER-4
+net_struct.add_layer('MVN'         ,{true,true});
+net_struct.add_layer('Convolution' ,{384,3,1,1,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
+net_struct.add_layer('PReLU'       ,{false},{[0.5,0.1, 0]},{'constant',0.25});
+%LAYER-5
+%net_struct.add_layer('MVN'         ,{true,true});
+net_struct.add_layer('Convolution' ,{256,3,1,1,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
+net_struct.add_layer('PReLU'       ,{false},{[0.5,0.1, 0]},{'constant',0.25});
+net_struct.add_layer('Pooling'     ,{'MAX',3,2,0});
+%LAYER-6
+net_struct.add_layer('InnerProduct',{4096,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
+net_struct.add_layer('Dropout'     ,{0.7});
+net_struct.add_layer('PReLU'       ,{false},{[0.5,0.1, 0]},{'constant',0.25});
+%LAYER-7
+net_struct.add_layer('InnerProduct',{4096,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
+net_struct.add_layer('Dropout'     ,{0.7});
+net_struct.add_layer('PReLU'       ,{false},{[0.5,0.1, 0]},{'constant',0.25});
+%LAYER-8
+net_struct.add_layer('InnerProduct',{200,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
+net_struct.add_layer('Output'      ,{'SoftmaxWithLoss'});
 %% -------------------------------------------------
 
-net = network();
-net.set_model(model);
+net = network(model,net_struct);
 clear model;
 %% SET CAFFE
-net.caffe.set_use_gpu(0);                                %device_id (zero-based) if device_id < 0 then CPU execution
-net.caffe.set_structure(net_struct);
+net.caffe.set_use_gpu(0); %device_id (zero-based) if device_id < 0 then CPU execution
 net.caffe.init('train');
 
-%                   layer_number/attribute/weights/bias value (uniform)
-%net.caffe.set_layer(1,gabor2D(11,3),0);
-%net.caffe.set_layer(2,random_bank_filters(5,5,32,256),0);
-%net.caffe.set_layer(3,random_bank_filters(3,3,256,384),0);
-%net.caffe.set_layer(4,random_bank_filters(3,3,384,384),0);
-%net.caffe.set_layer(5,random_bank_filters(3,3,384,256),0);
-
 net.batch_factory.set_async_queue_size(5);
-net.batch_factory.crop(0.4);                             %frequency per batch [0-1]
-net.batch_factory.rotate([-20 20],0.3);              %Rotate 0% of batch with a random angle between [-20,20].
+net.batch_factory.crop(0.4);                  %frequency per batch [0-1]
+net.batch_factory.rotate([-20 20],0.3);       %Rotate 0% of batch with a random angle between [-20,20].
 net.batch_factory.skew([-0.35 0.35],0.3);
-net.batch_factory.projections(0);                    %Projections frequency(hardcoded params, TESTS PENDING)
-net.batch_factory.use_flipped_samples(1);            %Use horizontal flipped images during training
-net.batch_factory.normalize_input('subtract_means');  %[X - E(D)]/std(D)
-%net.batch_factory.normalize_input('subtract_means_normalize_variances');  %[X - E(D)]/std(D)
+net.batch_factory.projections(0);             %Projections frequency(hardcoded params, TESTS PENDING)
+net.batch_factory.use_flipped_samples(1);     %Use horizontal flipped images during training
+%net.batch_factory.normalize_input('subtract_means');  %[X - E(D)]/std(D)
+net.batch_factory.normalize_input('subtract_means_normalize_variances');  %[X - E(D)]/std(D)
 %net.batch_factory.normalize_input('zero_one_scale');
 %caffe---------------------------------------------------------
 
 net.set_batches_per_iter(1);                  %How many batches to perform 1 weight update 
 
 %net.set_validations_per_epoch(40);
-net.set_validation_interval(3500);
+net.set_validation_interval(1500);
 
 net.train.set_method('user_defined',{net.validation,net.exit_train});
-net.train.method.set_learning_params({0.015,0.9,0.5,0.0005,2,1});
+net.train.method.set_learning_params({0.015,0.9,0.3,0.0005,2,1});
 
 %net.train.set_method('SGD');
 %net.train.method.set_learning_params({0.01,0.9,0.1,100000,0.0005});
@@ -98,7 +96,7 @@ net.validation.set_best_target('Average','top1')
 net.set_max_iterations(inf);                     %STOP parameter - What is the maximum size of epochs to trigger a stop
 net.set_snapshot_time(8*60);                     %Save a snapshot of the net every (time in minutes)
 net.set_display(200);                            %Display training stats every x iterations
-net.fetch_train_error(0);                  %Enable(1)/Disable(0) computation of train error to increase speed in case of latency due to caffe
+net.fetch_train_error(1);                  %Enable(1)/Disable(0) computation of train error to increase speed in case of latency due to caffe
 net.start();
 
 %% DEPLOY

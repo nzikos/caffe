@@ -39,8 +39,10 @@ switch type
     case 'error'
         fprintf(2,'%s\n',out);
     case 'warning'
+        sound(audioread('/utils/Beep-SoundBible.com-923660219.wav'));        
         fprintf(2,'%s\n',out);
     case 'last_error'
+        sound(audioread('/utils/Beep-SoundBible.com-923660219.wav'));
         error(out);
     otherwise
         error('Wrong type of msg passed to APP_LOG');

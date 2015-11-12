@@ -17,17 +17,18 @@ classdef network < handle
     properties
         caffe;
         batch_factory;
+        structure;
         
         train;
         training_fig        = []; 
         training_error_line = [];
         
         validation;
-        validation_fig              = figure('name','Validation stats');
-        validation_top1_line        = animatedline('Color','r','Marker','*','LineStyle','-');
-        validation_mean_top1_line   = animatedline('Color',[0.9882 0.5373 0.6745],'Marker','*','LineStyle','-');
-        validation_topk_line        = animatedline('Color','g','Marker','*','LineStyle','-');
-        validation_mean_topk_line   = animatedline('Color',[0.0039 0.1961 0.1255],'Marker','*','LineStyle','-');
+        validation_fig;
+        validation_top1_line;
+        validation_mean_top1_line;
+        validation_topk_line;
+        validation_mean_topk_line;
         
         iter;
         iters_per_display;
@@ -44,10 +45,7 @@ classdef network < handle
     
     methods
         %% INIT
-        function net = network()
-            net.caffe                    = [];
-            net.train                    = [];
-            net.validation               = [];
+        function net = network(extraction_model,net_struct)
             net.iter                     = 0;
             net.iters_per_val            = 2000;
             net.max_iterations           = [];
@@ -55,35 +53,52 @@ classdef network < handle
             net.snapshot_time_in_minutes = 60;
             net.exit_train               = EXIT_HANDLER();
             net.time_per_iter            = 0;
-        end
-        
-        %% SETTERS
-        function net = set_model(net,extraction_model)
-            if strcmp(class(extraction_model),'extraction_model')
-                            
-                set              = extraction_model.sets.set;
-                
-                net.snapshot_path= fullfile(extraction_model.paths.cache,'snapshots');
-                handle_dir(net.snapshot_path,'create');
-                best_model_path= fullfile(extraction_model.paths.cache,'best_model.mat');
-                
-                net.caffe        = CAFFE(extraction_model.paths.cache);
-                
-                net.batch_factory = BATCH_FACTORY(net.caffe.structure);
-                net.batch_factory.set_train_objects(extraction_model.objects.data.(set{1}));
-                net.batch_factory.set_validation_objects(extraction_model.objects.data.(set{2}));
-                net.batch_factory.set_use_mean_std(extraction_model.objects);
-                
-                net.train        = TRAIN(net.caffe,net.batch_factory);
-                net.validation   = VALIDATION(net.caffe,net.batch_factory,best_model_path);
-                
-                net.caffe.set_labels(extraction_model.objects.data.(set{2}));
+            if isa(net_struct,'NET_STRUCTURE')
+%                 net.structure.prototxt_path    = net_struct.prototxt_path;
+%                 net.structure.train_batch_size = net_struct.train_batch_size;
+%                 net.structure.val_batch_size   = net_struct.val_batch_size;
+%                 net.structure.test_batch_size  = net_struct.test_batch_size;
+%                 net.structure.objects_size     = net_struct.objects_size;
+%                 net.structure.labels_size      = net_struct.labels_size;
+%                 
+%                 net.structure.layers           = net_struct.layers;
+%                 net.structure.params           = net_struct.params;
+%                 net.structure.lr_mult          = net_struct.lr_mult;
+%                 net.structure.wd_mult          = net_struct.wd_mult;
+%                 
+%                 net.structure.counter          = net_struct.counter;
+%                 net.structure.params_counter   = net_struct.params_counter;
+%                 net.structure.sub_counter      = net_struct.sub_counter;
+%                 
+%                 net.structure.valid_structure  = net_struct.valid_structure;
+                net.structure = net_struct;
+                if isa(extraction_model,'extraction_model')
+                    set              = extraction_model.sets.set;
 
+                    net.snapshot_path= fullfile(extraction_model.paths.cache,'snapshots');
+                    handle_dir(net.snapshot_path,'create');
+                    best_model_path= fullfile(extraction_model.paths.cache,'best_model.mat');
+
+                    net.caffe         = CAFFE(net.structure);
+
+                    net.batch_factory = BATCH_FACTORY(net.structure);
+                    net.batch_factory.set_train_objects(extraction_model.objects.data.(set{1}));
+                    net.batch_factory.set_validation_objects(extraction_model.objects.data.(set{2}));
+                    net.batch_factory.set_use_mean_std(extraction_model.objects);
+
+                    net.train        = TRAIN(net.caffe,net.batch_factory);
+                    net.validation   = VALIDATION(net.caffe,net.batch_factory,best_model_path);
+                    
+                    net.caffe.set_labels(extraction_model.objects.data.(set{2}));                    
+                else
+                        APP_LOG('last_error','Expected object of class "extraction_model"');                    
+                end
             else
-                APP_LOG('last_error','Expected object of class "extraction_model"');
+                APP_LOG('last_error','Expected object of class "NET_STRUCTURE"');
             end
         end
-              
+        
+        %% SETTERS              
         function net = set_batches_per_iter(net,batches_per_iter)
             net.train.set_batches_per_iter(batches_per_iter);
         end
@@ -116,9 +131,11 @@ classdef network < handle
             if(net.train.fetch_train_error)
                 APP_LOG('info','Loading training error plot');
                 net.training_fig = figure('name','training error');
-                net.training_error_line = animatedline('color','blue');
+                net.training_error_line = animatedline('color',[110 181 254]/255);
+                legend(net.structure.layers{end}.type_train);
                 addpoints(net.training_error_line,1:length(net.train.error),net.train.error);                
             end
+            net.init_validation_figure();            
             
             if isempty(net.batch_factory.train_queue)
                 APP_LOG('debug','Async load batch/es in host/cpu memory');                
@@ -143,6 +160,9 @@ classdef network < handle
                 
                 net.print_state();
 
+%                  x=net.caffe.get.params();
+%                  [x(2).data{1}(1) x(10).data{1}(1) x(12).data{1}(1)]
+
                 if ~mod(net.iter,net.iters_per_val)
                     APP_LOG('header','Validating');
                     net.caffe.set_phase('validation');
@@ -161,6 +181,15 @@ classdef network < handle
                 end
                 net.tic_toc_snapshot();                
             end
+        end
+        %% INIT FIGURES
+        function init_validation_figure(net)
+            net.validation_fig              = figure('name','Validation stats');
+            net.validation_top1_line        = animatedline('Color','r','Marker','*','LineStyle','-');
+            net.validation_mean_top1_line   = animatedline('Color',[0.9882 0.5373 0.6745],'Marker','*','LineStyle','-');
+            net.validation_topk_line        = animatedline('Color','g','Marker','*','LineStyle','-');
+            net.validation_mean_topk_line   = animatedline('Color',[0.0039 0.1961 0.1255],'Marker','*','LineStyle','-');            
+            legend('Overall TOP-1 accuracy','Average TOP-1 accuracy',['Overall TOP-' num2str(net.validation.k) ' accuracy'],['Average TOP-' num2str(net.validation.k) ' accuracy'],'Location','southeast');
         end
         %% UPDATE FIGURES
         function update_train_error(net)
@@ -210,6 +239,7 @@ classdef network < handle
         %% SAVE - LOAD Functions
         function save_current_network(net,path)
             APP_LOG('info','Saving network under %s',path);
+            t_net.structure                = net.structure;            
             t_net.caffe                    = net.caffe;
             t_net.batch_factory            = net.batch_factory;
             t_net.train                    = net.train;
@@ -227,6 +257,8 @@ classdef network < handle
 
         function net = load_snapshot(net,path)
             load(path);
+            APP_LOG('info','Loading Network Structure...');
+            net.structure                = t_net.structure;
             APP_LOG('info','Loading Caffe state...');
             net.caffe                    = t_net.caffe;
             APP_LOG('info','Loading Batch Factory state...');

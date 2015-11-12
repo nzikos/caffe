@@ -43,9 +43,9 @@ classdef TRAIN_USER_DEFINED < handle
         end
         
         function init(obj)
-             for i=1:obj.caffe.structure.n_layers
-                 for j=1:length(obj.caffe.params(i).data)
-                     obj.Vt(i).data{j}=zeros(size(obj.caffe.params(i).data{j}));
+             for i=1:length(obj.caffe.net_structure.params)
+                 for j=1:length(obj.caffe.net_structure.params(i).data)
+                     obj.Vt(i).data{j}=zeros(size(obj.caffe.net_structure.params(i).data{j}));
                  end
              end
         end
@@ -57,29 +57,29 @@ classdef TRAIN_USER_DEFINED < handle
                     obj.m       = 0;   
                     obj.gamma   = 1;
                     obj.wd      = 0;             
-                    obj.failed_vals_threshold=options{2};
-                    obj.failed_lr_changes_threshold=options{3};
+                    obj.failed_vals_threshold       =options{2};
+                    obj.failed_lr_changes_threshold =options{3};
                 case 4 %lr-m
                     obj.lr      = options{1};
                     obj.m       = options{2};
                     obj.gamma   = 1;
                     obj.wd      = 0;
-                    obj.failed_vals_threshold=options{3};
-                    obj.failed_lr_changes_threshold=options{4};
+                    obj.failed_vals_threshold       =options{3};
+                    obj.failed_lr_changes_threshold =options{4};
                 case 5 %lr-m-gamma
                     obj.lr      = options{1};
                     obj.m       = options{2};
                     obj.gamma   = options{3};
                     obj.wd      = 0;
-                    obj.failed_vals_threshold=options{4};
-                    obj.failed_lr_changes_threshold=options{5};
+                    obj.failed_vals_threshold       =options{4};
+                    obj.failed_lr_changes_threshold =options{5};
                 case 6 %lr-m-gamma-weight decay
                     obj.lr      = options{1};
                     obj.m       = options{2};
                     obj.gamma   = options{3};
                     obj.wd      = options{4};
-                    obj.failed_vals_threshold=options{5};
-                    obj.failed_lr_changes_threshold=options{6};
+                    obj.failed_vals_threshold       =options{5};
+                    obj.failed_lr_changes_threshold =options{6};
                 otherwise
                     APP_LOG('last_error','Erroneous options passed to SGD method');
             end
@@ -107,15 +107,14 @@ classdef TRAIN_USER_DEFINED < handle
                 end
             end
 
-            lr_mult      = obj.caffe.structure.lr_mult;
-            n_layers     = obj.caffe.structure.n_layers;
-            for i=1:n_layers
-                for j=1:length(obj.caffe.params(i).data) %weight + bias / weights
-                    %local_lr = lr * local_lr_mult;
-                    %Vt = m*Vt - (local_lr/bpi)*grads - local_lr*wd*Wt;
-                    local_lr = obj.lr * lr_mult{i,j};
-                    obj.Vt(i).data{j}=obj.m * obj.Vt(i).data{j} - (local_lr/bpi) * sum_grads(i).diff{j} - obj.wd*local_lr*obj.caffe.params(i).data{j};
-                    obj.caffe.params(i).data{j}=obj.caffe.params(i).data{j}+obj.Vt(i).data{j};
+            local_lr     = obj.caffe.net_structure.lr_mult .* obj.lr;
+            local_wd     = obj.caffe.net_structure.wd_mult .* obj.wd;
+            local_m      = obj.caffe.net_structure.m_mult  .* obj.m;
+            for i=1:length(sum_grads)
+                for j=1:length(obj.caffe.net_structure.params(i).data) %weight + bias / weights
+                    
+                    obj.Vt(i).data{j}=local_m(i,j) * obj.Vt(i).data{j} - (local_lr(i,j)/bpi) * sum_grads(i).diff{j} - local_wd(i,j)*local_lr(i,j)*obj.caffe.net_structure.params(i).data{j};
+                    obj.caffe.net_structure.params(i).data{j}=obj.caffe.net_structure.params(i).data{j}+obj.Vt(i).data{j};
                 end
             end
             clear grads;

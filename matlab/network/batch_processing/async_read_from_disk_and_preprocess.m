@@ -69,7 +69,7 @@ batch_size = length(paths);
 for i=batch_size:-1:1
     tmp = load(paths{i});
     data(:,:,:,i)=tmp.object.data;
-    uids(1,1,1,i)=tmp.object.uid;
+    uids(i,:)=tmp.object.uid;
 end
 
 %% Convert frequencies to batch regions
@@ -126,7 +126,7 @@ end
 
 %% OUTPUT
 out{1,1}=processed_data;
-out{2,1}=uids;
+out{2,1}=int32(uids);
 end
 
 function output_data = get_projections(data,dims,rot_theta_bounds)

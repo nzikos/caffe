@@ -5,10 +5,6 @@ classdef TRANSFORMS < handle
     %   This class is part of BATCH_FACTORY() class.    
     %    
     %% Processing details
-    % Since CNNs are invariant in many transformations, I.e. if a neural net
-    % sees for the first time a human face rotated by 30 degrees it may not
-    % recognize it, certain affine transformations are applied creating much
-    % more unique images for the neural net, to learn.
     %
     %   Supported transformations are:
     %   1. flip

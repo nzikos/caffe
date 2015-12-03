@@ -83,7 +83,7 @@ classdef CAFFE < handle
             obj.action.init             = @()caffe('init',obj.train_prototxt,'train');
             obj.action.forward          = @()caffe('forward');
             obj.action.forward_backward = @()caffe('forward_backward');
-            obj.action.backward         = @(diffs)caffe('backward',diffs);
+            obj.action.backward         = @()caffe('backward');
             obj.action.training_iter    = @(batch)caffe('training_iter',batch);
             
             obj.action.reset();
@@ -113,21 +113,15 @@ classdef CAFFE < handle
             phase=lower(phase);
             switch phase
                 case 'train'
-                    if isempty(obj.train_prototxt)
-                        obj.train_prototxt = obj.net_structure.create_prototxt('train');
-                    end
+                    obj.train_prototxt = obj.net_structure.create_prototxt('train');
                     caffe('init',obj.train_prototxt,'train');
                     obj.current_phase='train';
                 case 'validation'
-                    if isempty(obj.validation_prototxt)                    
-                        obj.validation_prototxt = obj.net_structure.create_prototxt('validation');                    
-                    end
+                    obj.validation_prototxt = obj.net_structure.create_prototxt('validation');                    
                     caffe('init',obj.validation_prototxt,'test');
                     obj.current_phase='validation';                    
                 case 'test'
-                    if isempty(obj.test_prototxt)
-                        obj.test_prototxt       = obj.net_structure.create_prototxt('test');
-                    end
+                    obj.test_prototxt       = obj.net_structure.create_prototxt('test');
                     caffe('init',obj.test_prototxt,'test');
                     obj.current_phase='test';
                 otherwise
@@ -148,20 +142,19 @@ classdef CAFFE < handle
                 APP_LOG('last_error','[labels: %d - last layer''s bottom: [%d %d %d]',length(arg_dataset),last_layer_bottom_blob(1),last_layer_bottom_blob(2),last_layer_bottom_blob(3));
             end
         end
-               
+        
+        %SHOULD NOT BE CHANGED ON-THE-FLY (during train/val phases) due to async queues
         function reset_object_input(obj,phase,object_input_size)
+            APP_LOG('info','Reseting %s phase batch size to %d',phase,object_input_size);
             switch(phase)
                 case 'train'
                     obj.net_structure.set_batch_size(phase,object_input_size);
-                    obj.net_structure.validate_structure();
                     obj.train_prototxt = obj.net_structure.create_prototxt(phase);                    
                 case 'validation'
                     obj.net_structure.set_batch_size(phase,object_input_size);
-                    obj.net_structure.validate_structure();
                     obj.validation_prototxt = obj.net_structure.create_prototxt(phase);                    
                 case 'test'
                     obj.net_structure.set_batch_size(phase,object_input_size);
-                    obj.net_structure.validate_structure();
                     obj.test_prototxt = obj.net_structure.create_prototxt(phase);
                 otherwise
                     APP_LOG('last_error','Invalid phase "%s". Use train/validation/test instead',phase);
@@ -185,8 +178,6 @@ classdef CAFFE < handle
             else
                 caffe('set_mode_cpu');
             end
-            
-            obj.set.params();
         end
 	end
 end

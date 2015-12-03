@@ -1,6 +1,12 @@
 function APP_LOG(type,fmt,varargin)
-%APP_LOG Summary of this function goes here
-%   Detailed explanation goes here
+%APP_LOG Summary This function is used to initialize log keeping and
+%control the console output of the toolbox.
+%
+%% TODO:PARAMETRIZE DEBUG option
+%
+%% AUTHOR: PROVOS ALEXIS
+%  DATE:   20/5/2015
+%  FOR:    VISION TEAM - AUTH
 debug=1;
 persistent log_dir;
 

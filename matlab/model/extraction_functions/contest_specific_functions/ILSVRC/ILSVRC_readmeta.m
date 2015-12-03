@@ -1,12 +1,16 @@
-% This code was originally written and distributed as part of the
-% PASCAL VOC challenge. But now...
-% This code was modified.
-
-%   This is a function from the contest_specific_functions set.
-%   This function's action is to take a list of metadata filepaths and
-%   their relative paths and create an array of structs as described under
-%   build_meta.m
+%   This code was originally written and distributed as part of the
+%   PASCAL VOC challenge. But now...
+%   This code was modified.
+%
+%%  Brief explanation
+%      This is a function from the contest_specific_functions set.
+%      This function's action is to take a list of metadata filepaths along
+%      with their relative paths and create an array of structs as described under
+%      build_meta.m
 %   
+%%  AUTHOR: PROVOS ALEXIS
+%   DATE:   19/5/2015
+%   FOR:    vision team - AUTH
 
 function out = ILSVRC_readmeta(list,imdb_dir,imdb_ext)
 

@@ -1,7 +1,7 @@
 % Close figures.
 delete(findall(0,'Type','figure'))
 
-load('ILSVRC2012_val_00001047_1.mat')
+load('ILSVRC2014_train_00009828_1.mat')
 
 im=permute(object.data,[2 1 3]);
 dims=[227 227];
@@ -49,10 +49,12 @@ new_im = im(rnd_height_1+1:rnd_height_2,rnd_width_1+1:rnd_width_2,:);
 
 figure;imshow(new_im)
 
+%ROTATION TFORM
 theta = 30;
 
 R=[cosd(theta) -sind(theta) 0; +sind(theta) cosd(theta) 0; 0 0 1];
 
+%SHEAR TFORM
 shear_v = sind(0); shear_h = 0.35;
 S=[1       shear_v 0 ;
    shear_h 1       0 ;
@@ -60,7 +62,24 @@ S=[1       shear_v 0 ;
 
 tform = affine2d(S);
 
+%PROJECTIVE TFORM
+theta = -20 + 40*rand(1,1);
+
+if (rand(1,1)>0.5)
+    randomValue1 = (-0.002 + (0.0047)*rand(1,1));
+    randomValue2 = (-0.0004 + (0.00154)*rand(1,1));
+else
+    randomValue1 = (-0.0004 + (0.00154)*rand(1,1));
+    randomValue2 = (-0.002 + (0.0047)*rand(1,1));
+end
+
+tform = projective2d([cosd(theta) -sind(theta) randomValue1;
+    sind(theta)  cosd(theta) randomValue2;
+    0            0                      1
+    ]);
+
 new_im = imwarp(im,tform);
+imshow(new_im);
 new_im2 = new_im;
 
 u = [1 1 ;1 size(im,1);size(im,2) 1; size(im,2) size(im,1)];
@@ -70,7 +89,7 @@ v(:,2)=(v(:,2)-min(v(:,2)))+1;
 %v=ceil(v)+1
 v=ceil(v);
 
-new_im3 = crop_blanks(new_im,tform);
+new_im3 = crop_blanks(new_im,size(im),tform);
 %print transformed coordinates on image
 new_im(v(1,2),v(1,1),1)=255;
 new_im(v(1,2),v(1,1),2)=0;

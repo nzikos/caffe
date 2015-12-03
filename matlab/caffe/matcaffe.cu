@@ -121,7 +121,8 @@ static mxArray* do_download_output(){
 		mxArray* mx_blob =  mxCreateNumericArray(4, dims, mxSINGLE_CLASS, mxREAL);
 		mxSetCell(mx_out, i, mx_blob);
 		float* data_ptr = reinterpret_cast<float*>(mxGetPr(mx_blob));
-		switch (Caffe::mode()) {
+		caffe_copy(output_blobs[i]->count(), output_blobs[i]->cpu_data(),data_ptr);
+/*		switch (Caffe::mode()) {
 			case Caffe::CPU:
 				caffe_copy(output_blobs[i]->count(), output_blobs[i]->cpu_data(),data_ptr);
 				break;
@@ -130,7 +131,7 @@ static mxArray* do_download_output(){
 				break;
 			default:
 				mex_error("Unknown Caffe mode");
-		}
+		}*/
 	}
 	return mx_out;
 }

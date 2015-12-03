@@ -1,7 +1,11 @@
 function [list] = get_file_list(datadir,filetypes)
 %get_file_list export a list of files from a specific dir
+%
 %   This function is accessing the specified directory
 %   and returns a list of all files included
+%
+%   This is a sub-function of super_get_file_list which implements
+%   reccursion.
 
 dirStr          = dir(datadir);
 list            = [];

@@ -1,9 +1,18 @@
 function vector = vectorize_objects_fpaths(fpaths)
 %VECTORIZE_OBJECTS_FPATHS This function is used to vectorize objects
-%filepaths from a cell array of cells organized by class to a 1-D cell 
-%array of filepaths.
-%The 'vector' will be used as a pool by the network to
-%feed the training/validation processes with objects.
+%   filepaths from a cell array of cells organized by class to 1D, sorted by 
+%   class lengths, cell array of filepaths.
+%
+%   The 'vector' will be used as a pool by the network to
+%   feed the validation process with objects.
+%
+%%  TODO:
+%%	This method is just a workaround to make validation length a multiple
+%%	of batch size and of course needs a better implementation.
+%
+%%	AUTHOR: PROVOS ALEXIS
+%	DATE:   20/5/2015
+%	FOR:    VISION TEAM - AUTH
 
 vector = {};
 index=1;

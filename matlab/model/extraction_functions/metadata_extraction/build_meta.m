@@ -2,12 +2,14 @@ function [data,rmap] = build_meta(paths,dataset,set)
 %   BUILD_META.m This function is used to build the metadata tables and
 %   class maps that later will be used to export the objects from images
 %
+%% Explanation
+%
 %   Build meta is in charge of the following actions:
 %
 %   1. Reads metadata from metadata files and stores them in a matlab array
 %      of structs.
 %   2. Maps classes to objects.
-
+%
 %   User is able to import his/her own function which is in charge of
 %   extracting the metadata from a specified a dataset.
 %   This can be done by supplying the custom function at the handler under
@@ -34,9 +36,9 @@ function [data,rmap] = build_meta(paths,dataset,set)
 %                           pixel values of:
 %                                              [xmin] [xmax] [ymin] [ymax]
 %
-%   AUTHOR: PROVOS ALEXIS
-%   DATE:   7/5/2015
-%   FOR:    vision team - AUTH
+%%   AUTHOR: PROVOS ALEXIS
+%    DATE:   7/5/2015
+%    FOR:    vision team - AUTH
 
 %%  Build metadata
     APP_LOG('header','BUILDING META');

@@ -3,21 +3,28 @@ classdef OBJECTS < handle
     %from the images using the metadata arrays that were extracted from 
     %METADATA class.
     %
-    %   Properties:
-    %               dims: The dimensions of the the extracted objects
-    %               data: The filepaths of the extracted objects organised
-    %                     per set/class for better visual inspection.
-    %   Functions:
-    %               build_objects: Is extracting the objects and building
-    %                              the indexer who will be stored under
-    %                              data in order to feed him to the net.
-    %                save_objects: Is saving the indexer under cache
-    %                              directory.
-    %                load_objects: Is loading the indexer from the
-    %                              specified cache directory that the model
-    %                              was initialized. May throw error if file
-    %                              is not present.
-    %   AUTHOR: PROVOS ALEXIS
+    %   This class is part of extraction_model()
+    %
+    %%  PROPERTIES
+    %       dims: The dimensions of the the extracted objects
+    %
+    %       data: The filepaths of the extracted objects organised
+    %             per set/class for better visual inspection.
+    %
+    %%  METHODS
+    %       build_objects: Is extracting the objects and building
+    %                      the indexer who will be stored under
+    %                      data in order to feed him to the net.
+    %
+    %       save_objects : Is saving the indexer under cache
+    %                      directory.
+    %
+    %       load_objects : Is loading the indexer from the
+    %                      specified cache directory that the model
+    %                      was initialized. May throw error if file
+    %                      is not present.
+    %
+    %%  AUTHOR: PROVOS ALEXIS
     %   DATE:   19/5/2015
     %   FOR:    vision team - AUTH
     
@@ -27,6 +34,7 @@ classdef OBJECTS < handle
         mean;
         std;
         get_mean_std = 0;
+        class_frequencies;
     end
     methods
         %% INIT
@@ -46,10 +54,11 @@ classdef OBJECTS < handle
         %% SAVE OBJECTS
         function save_objects(obj,obj_file)
             APP_LOG('info','Save Objects filepaths indexer...');
-            this.data         = obj.data;
-            this.dims         = obj.dims;
-            this.mean         = obj.mean;
-            this.std          = obj.std;
+            this.data              = obj.data;
+            this.dims              = obj.dims;
+            this.mean              = obj.mean;
+            this.class_frequencies = obj.class_frequencies;
+            this.std               = obj.std;
             save(obj_file,'this','-v6');
             APP_LOG('info','Objects filepaths indexer saved succesfully!');
         end
@@ -57,10 +66,11 @@ classdef OBJECTS < handle
         function load_objects(obj,obj_file,set)
             APP_LOG('header','Loading Objects filepaths indexer from %s',obj_file);
             load(obj_file);
-            obj.data         = this.data;
-            obj.dims         = this.dims;
-            obj.mean         = this.mean;
-            obj.std          = this.std;
+            obj.data              = this.data;
+            obj.dims              = this.dims;
+            obj.mean              = this.mean;
+            obj.class_frequencies = this.class_frequencies;
+            obj.std               = this.std;
             APP_LOG('info','Objects filepaths indexer loaded succesfully!');
             if obj.get_mean_std
                 if isempty(obj.mean) || isempty(obj.std)
@@ -73,6 +83,7 @@ classdef OBJECTS < handle
         function build_objects(obj,set,meta,paths,dataset)
             obj.data = build_objs(set,meta,paths,obj.dims,dataset);
             obj.mean_and_std_computation_function(set);
+            obj.compute_class_frequencies(set);
         end
         
         %% COMPUTE MEAN STD
@@ -105,6 +116,21 @@ classdef OBJECTS < handle
                 obj.std  = single(sqrt(variance./(counter-1))); %assuming unknown mean
                 obj.mean = single(tmp_mean);
             end            
+        end
+        %% COMPUTE CLASS FREQUENCIES
+        function compute_class_frequencies(obj,set)
+            for i=1:length(set)
+                %compute_sum
+                sum=0;
+                for j=1:length(obj.data.(set{i}))
+                    sum=sum+length(obj.data.(set{i})(j).paths);
+                end
+                APP_LOG('info','%s set contains %d objects',set{i},sum);
+                for j=length(obj.data.(set{i})):-1:1
+                    class_freq(j)=length(obj.data.(set{i})(j).paths)/sum;
+                end
+                obj.class_frequencies{i} = class_freq;
+            end
         end
     end
     

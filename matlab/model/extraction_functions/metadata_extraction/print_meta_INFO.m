@@ -1,5 +1,9 @@
-function print_meta_INFO(data,rmap,set,class_names_map)
 %PRINT_INFO Prints information about metadata
+%
+%%  AUTHOR: PROVOS ALEXIS
+%   DATE:   19/5/2015
+%   FOR:    vision team - AUTH
+function print_meta_INFO(data,rmap,set,class_names_map)
 classes = rmap.(set{1}).keys;
 
 % PRINT HEADER

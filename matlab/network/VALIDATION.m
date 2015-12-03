@@ -7,7 +7,7 @@ classdef VALIDATION < handle
         caffe;
         batch_factory;
         
-        k;        
+        k=5;
         best_model_path;
         per_class_stats;  
         average        = struct('error',[],'top1',[],'topk',[]);
@@ -64,33 +64,40 @@ classdef VALIDATION < handle
         end
         %% FUNCTIONS 
         function do_validation(val)
-                rcaffe   = val.caffe;
-                bfactory = val.batch_factory;
+                rcaffe   	    = val.caffe;
+                bfactory 	    = val.batch_factory;
                 
-                val.per_class_stats         = zeros(length(rcaffe.labels),4);
+                val.per_class_stats = zeros(length(rcaffe.labels),4);
 
-                batch = bfactory.prepare_validation_batch();
+                bfactory.prepare_validation_batch();
+                
+                batch = bfactory.create_validation_batch();
 
                 while(~isempty(batch))
                     rcaffe.set.input(batch(1));                    
                     rcaffe.action.forward();
                     probs=rcaffe.get.output();
                     
-                    val.sum_per_class_stats(batch(2),probs{1});
-                    batch = bfactory.create_validation_batch();                    
+                    val.sum_per_class_stats(batch{2},probs{1});
+                    batch = bfactory.create_validation_batch();
                 end
                 
                 sum_stats =sum(val.per_class_stats);
-                val.overall(end+1).error=sum_stats(1)/sum_stats(4);                    
-                val.overall(end).top1 =sum_stats(2)/sum_stats(4);
-                val.overall(end).topk =sum_stats(3)/sum_stats(4);
+                switch val.caffe.net_structure.layers{end}.type_train
+                    case 'EuclideanLoss'
+                        val.overall(end+1).error = sum_stats(1)/(2*sum_stats(4));
+                    otherwise
+                        val.overall(end+1).error = sum_stats(1)/sum_stats(4);
+                end
+                val.overall(end).top1      = sum_stats(2)/sum_stats(4);
+                val.overall(end).topk      = sum_stats(3)/sum_stats(4);
 
                 val.compute_per_class_stats();
                 val.print_per_class_stats();
-                val.average(end+1).error = mean(val.per_class_stats(:,1));
-                val.average(end).top1  = mean(val.per_class_stats(:,2));
-                val.average(end).topk  = mean(val.per_class_stats(:,3));
-
+                val.average(end+1).error   = mean(val.per_class_stats(:,1));
+                val.average(end).top1      = mean(val.per_class_stats(:,2));
+                val.average(end).topk      = mean(val.per_class_stats(:,3));
+                
                 APP_LOG('info','Overall results: Error: %1.4f Top-1: %5.2f%% Top-%d: %5.2f%%',val.overall(end).error,val.overall(end).top1*100,val.k,val.overall(end).topk*100);
                 APP_LOG('info','Average results: Error: %1.4f Top-1: %5.2f%% Top-%d: %5.2f%%',val.average(end).error,val.average(end).top1*100,val.k,val.average(end).topk*100);
                 APP_LOG('info','Best    results: Error: %1.4f Top-1: %5.2f%% Top-%d: %5.2f%%',val.best.error,val.best.top1*100,val.k,val.best.topk*100);
@@ -128,41 +135,28 @@ classdef VALIDATION < handle
                     model.per_class_stats    = val.per_class_stats;
                     model.average            = val.average;
                     model.overall            = val.overall;
-                    model.normalization_type = val.batch_factory.normalization_type;                    
-                    model.mean               = val.batch_factory.mean;
-                    model.std                = val.batch_factory.std;
+                    model.normalization_type = val.batch_factory.input_norm.normalization_type;
+                    model.mean               = val.batch_factory.input_norm.mean;
+                    model.std                = val.batch_factory.input_norm.std;
+                    model.epsilon            = val.batch_factory.input_norm.epsilon;
                     save(val.best_model_path,'model','-v6');
                     clear model;                    
                     APP_LOG('info','Best model saved\n');
         end
         
-        function sum_per_class_stats(val,batch,results)
-            [~,sorted_prediction_ids]=sort(results,3,'descend');
-            sorted_prediction_ids=squeeze(sorted_prediction_ids)';
-            uids = squeeze(batch{1}) + 1; %caffe is 0-based
-            
-            %Multinomial logistic Loss
-            %-------------------------
-            %results(results<realmin('single'))=realmin('single');
-            results(results<eps)=eps;
-            for i=size(results,4):-1:1
-                x(i) = - log(results(1,1,uids(i),i));
-            end
+        function sum_per_class_stats(val,ground_truth,scores)
+            [~,sorted_scores_ids]=sort(scores,3,'descend');
+            sorted_scores_ids=squeeze(sorted_scores_ids)';
+
+            [error,uids] = val.caffe.net_structure.layers{end}.compute_error(squeeze(scores),squeeze(ground_truth));
+
             y=unique(uids);
             for i=1:length(y)
-                val.per_class_stats(y(i),1)=val.per_class_stats(y(i),1)+sum(x(y(i)==uids));
+                val.per_class_stats(y(i),1)=val.per_class_stats(y(i),1)+sum(error(y(i)==uids));
             end
-            %-------------------------
-            %Extract mse per class
-%              x=sum((batch{2}-results).^2,3);
-%              x=squeeze(x);
-%              y=unique(uids);
-%              for i=1:length(y)
-%                  val.per_class_stats(y(i),1)=val.per_class_stats(y(i),1)+sum(x(y(i)==uids));
-%              end
             
             %Extract Accuracy - TOP1
-            acc_indices=uids.*(sorted_prediction_ids(:,1) == uids);
+            acc_indices=uids(:).*(sorted_scores_ids(:,1) == uids(:));
             acc_indices=acc_indices(acc_indices~=0); %remove inaccurate res
             if ~isempty(acc_indices)
                 tbl = tabulate(acc_indices);
@@ -170,8 +164,8 @@ classdef VALIDATION < handle
             end
 
             %Extract Accuracy - TOPK
-            rep_uids=repmat(uids,1,val.k);       
-            acc_indices=uids.*(sum(sorted_prediction_ids(:,1:val.k)==rep_uids,2));
+            rep_uids=repmat(uids,1,val.k);
+            acc_indices=uids.*(sum(sorted_scores_ids(:,1:val.k)==rep_uids,2));
             acc_indices=acc_indices(acc_indices~=0); %remove inaccurate res
             if ~isempty(acc_indices)
                 tbl = tabulate(acc_indices);
@@ -184,7 +178,12 @@ classdef VALIDATION < handle
         end
         
         function compute_per_class_stats(val)
-            val.per_class_stats(:,1)=val.per_class_stats(:,1)./val.per_class_stats(:,4);
+            switch val.caffe.net_structure.layers{end}.type_train
+                case 'EuclideanLoss'
+                    val.per_class_stats(:,1)=val.per_class_stats(:,1)./(2*val.per_class_stats(:,4));
+                otherwise
+                    val.per_class_stats(:,1)=val.per_class_stats(:,1)./val.per_class_stats(:,4);
+            end
             val.per_class_stats(:,2)=val.per_class_stats(:,2)./val.per_class_stats(:,4);
             val.per_class_stats(:,3)=val.per_class_stats(:,3)./val.per_class_stats(:,4);
         end

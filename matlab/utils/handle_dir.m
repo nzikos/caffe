@@ -1,6 +1,15 @@
-%% --SUB FUNCTION WHICH HANDLES DIRECTORIES
-% Depending to behavior handle_dir creates the specified directory or
-% throws error.
+% handle_dir sub function which handles the behavior for specific
+% directories
+%
+%   Options are:
+%       Create: In order to create a non-existent directory
+%       Throw_error: In order to throw an error if a specified directory
+%       does not exist.
+%
+%%  AUTHOR: PROVOS ALEXIS
+%   DATE:   20/5/2015
+%   FOR:    VISION TEAM - AUTH
+
 function handle_dir(directory,behavior)
     switch behavior
         case 'create'

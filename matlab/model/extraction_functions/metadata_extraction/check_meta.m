@@ -1,9 +1,13 @@
 function check_meta(data,rmap,set)
-%CHECK_METADATA Validates the classes according to rules set in
-%here.
-%   Rules:
+%CHECK_METADATA Validates the classes according to rules set in here.
+%%  Rules:
 %       1. Number of classes between sets must be the same.
+%
 %       2. one-to-one correspondence rule for classes of sets.
+%
+%%  AUTHOR: PROVOS ALEXIS
+%   DATE:   19/5/2015
+%   FOR:    vision team - AUTH
 
 APP_LOG('info','Checking metadata relevance between sets');
 

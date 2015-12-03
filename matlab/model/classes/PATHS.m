@@ -1,7 +1,35 @@
 classdef PATHS
-    %PATHS Summary of this class goes here
-    %   Detailed explanation goes here
-    
+    %PATHS used to store and handle filepaths and directories
+    %
+    %   This class is part of extraction_model()
+    %
+    %%  PROPERTIES
+    %
+    %       meta         : Struct with train/val directories which contain
+    %                      the samples metadata.
+    %
+    %       imdb         : Struct with train/val directories which contain
+    %                      the samples data.
+    %
+    %       objects      : Struct with train/val directories which contain
+    %                      the extracted samples.
+    %
+    %       cache        : directory of cache
+    %
+    %       meta_file    : Absolute filepath to metadata file
+    %
+    %       objects_file : Absolute filepath to objects file
+    %
+    %       sets         : the naming of datasets (e.g. training,
+    %                      validation,train,val,etc)
+    %
+    %%   METHODS
+    %
+    %       print_paths  : Used to print paths in console
+    %
+    %%  AUTHOR: PROVOS ALEXIS
+    %   DATE:   19/5/2015
+    %   FOR:    vision team - AUTH    
     properties
         meta
         imdb

@@ -24,8 +24,8 @@ classdef DATASETS < handle
     %   class_names_map:Is a containers.map which correlates dataset
     %                   classes to human understandable text. E.g. WordNet
     %                   classes.
-    
-    %   AUTHOR: PROVOS ALEXIS
+    %
+    %%   AUTHOR: PROVOS ALEXIS
     %   DATE:   19/5/2015
     %   FOR:    vision team - AUTH
     properties

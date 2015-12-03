@@ -1,22 +1,33 @@
 classdef METADATA < handle
     %METADATA contains the metadata array of structs extracted from
     %         paths.metadata directories.
-    %Attributes:
-    %           data: The metadata struct of arrays containing structs
-    %                 extensively described under build_meta.m
-    %           rmap: The Containers.map containing indices of data 
-    %                 whose objs contain the specific classID. (Used for
-    %                 better memory management on parfors).
-    
-    %Functions:
-    %           build_metatada: Builds the metadata
-    %                    check: Checks classes between sets for robustness
-    %                    print: Prints a log of classes and objects on each
-    %                           set.
-    %            save_metadata: Saves the metadata under cache folder
-    %            load_metadata: Loads the metadata from the specified cache
-    %                           folder.
-    
+    %
+    %   This class is part of extraction_model()
+    %
+    %% Properties
+    %       data: The metadata struct of arrays containing structs
+    %             extensively described under build_meta.m
+    %
+    %       rmap: The Containers.map containing indices of data 
+    %             whose objs contain the specific classID. (Used for
+    %             better memory management on parfors).
+    %
+    %% Methods
+    %       build_metadata: Builds the metadata
+    %
+    %       check: Checks for relevance between sets classes
+    %
+    %       print: Prints a log of classes and objects on each
+    %              set.
+    %
+    %       save_metadata: Saves the metadata under cache folder
+    %
+    %       load_metadata: Loads the metadata from the specified cached
+    %                      file.
+    %
+    %%  AUTHOR: PROVOS ALEXIS
+    %   DATE:   19/5/2015
+    %   FOR:    vision team - AUTH    
     properties
         data;
         rmap;

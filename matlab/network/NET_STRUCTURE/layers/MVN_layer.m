@@ -11,7 +11,7 @@ classdef MVN_layer < handle
     %   Example input:
     %       {false,true}
     %   Translated as:
-    %       normalize mean taking into account the whole volume
+    %       Subtract per sample mean from each sample 
     %
     %   Attributes of this class are:
     %

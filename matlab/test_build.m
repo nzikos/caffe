@@ -33,7 +33,7 @@ net_struct.add_layer('PReLU'       ,{false},{[0, 0.1, 0]},{'constant',0.25});
 %net_struct.add_layer('Activation'  ,{'ReLU'});
 net_struct.add_layer('Pooling'     ,{'MAX',3,2,0});
 %LAYER-2
-%net_struct.add_layer('MVN'         ,{false,true});
+net_struct.add_layer('MVN'         ,{false,true});
 net_struct.add_layer('Convolution' ,{256,5,1,2,true},{[1,1,1],[1,1,1]},{{'gaussian',[0 0.01]},{'constant',0}});
 net_struct.add_layer('PReLU'       ,{false},{[0, 0.1, 0]},{'constant',0.25});
 %net_struct.add_layer('Activation'  ,{'ReLU'});

@@ -1,0 +1,248 @@
+name: "test"
+input: "data"
+input_dim: 2
+input_dim: 3
+input_dim: 227
+input_dim: 227
+layer {
+	name: "conv_1_1"
+	type: "Convolution"
+	bottom: "data"
+	top: "conv_1_1"
+	convolution_param {
+		num_output: 96
+		kernel_h: 11
+		kernel_w: 11
+		stride_h: 4
+		stride_w: 4
+		pad_h: 0
+		pad_w: 0
+		bias_term: true
+	}
+}
+layer {
+	name: "relu_1_2"
+	type: "ReLU"
+	bottom: "conv_1_1"
+	top: "conv_1_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "pool_1_3"
+	type: "Pooling"
+	bottom: "conv_1_1"
+	top: "pool_1_3"
+	pooling_param {
+		pool: MAX
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 2
+		stride_w: 2
+		pad_h: 0
+		pad_w: 0
+	}
+}
+layer {
+	name: "conv_2_1"
+	type: "Convolution"
+	bottom: "pool_1_3"
+	top: "conv_2_1"
+	convolution_param {
+		num_output: 256
+		kernel_h: 5
+		kernel_w: 5
+		stride_h: 1
+		stride_w: 1
+		pad_h: 2
+		pad_w: 2
+		bias_term: true
+	}
+}
+layer {
+	name: "relu_2_2"
+	type: "ReLU"
+	bottom: "conv_2_1"
+	top: "conv_2_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "pool_2_3"
+	type: "Pooling"
+	bottom: "conv_2_1"
+	top: "pool_2_3"
+	pooling_param {
+		pool: MAX
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 2
+		stride_w: 2
+		pad_h: 0
+		pad_w: 0
+	}
+}
+layer {
+	name: "conv_3_1"
+	type: "Convolution"
+	bottom: "pool_2_3"
+	top: "conv_3_1"
+	convolution_param {
+		num_output: 384
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 1
+		stride_w: 1
+		pad_h: 1
+		pad_w: 1
+		bias_term: true
+	}
+}
+layer {
+	name: "relu_3_2"
+	type: "ReLU"
+	bottom: "conv_3_1"
+	top: "conv_3_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "conv_4_1"
+	type: "Convolution"
+	bottom: "conv_3_1"
+	top: "conv_4_1"
+	convolution_param {
+		num_output: 384
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 1
+		stride_w: 1
+		pad_h: 1
+		pad_w: 1
+		bias_term: true
+	}
+}
+layer {
+	name: "relu_4_2"
+	type: "ReLU"
+	bottom: "conv_4_1"
+	top: "conv_4_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "conv_5_1"
+	type: "Convolution"
+	bottom: "conv_4_1"
+	top: "conv_5_1"
+	convolution_param {
+		num_output: 256
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 1
+		stride_w: 1
+		pad_h: 1
+		pad_w: 1
+		bias_term: true
+	}
+}
+layer {
+	name: "relu_5_2"
+	type: "ReLU"
+	bottom: "conv_5_1"
+	top: "conv_5_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "pool_5_3"
+	type: "Pooling"
+	bottom: "conv_5_1"
+	top: "pool_5_3"
+	pooling_param {
+		pool: MAX
+		kernel_h: 3
+		kernel_w: 3
+		stride_h: 2
+		stride_w: 2
+		pad_h: 0
+		pad_w: 0
+	}
+}
+layer {
+	name: "ip_6_1"
+	type: "InnerProduct"
+	bottom: "pool_5_3"
+	top: "ip_6_1"
+	inner_product_param {
+		num_output: 4096
+		bias_term: true
+	}
+}
+layer {
+	name: "drop_6_2_1"
+	type: "Dropout"
+	bottom: "ip_6_1"
+	top: "ip_6_1"
+	dropout_param {
+		dropout_ratio: 0.500000000000
+	}
+}
+layer {
+	name: "relu_6_3"
+	type: "ReLU"
+	bottom: "ip_6_1"
+	top: "ip_6_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "ip_7_1"
+	type: "InnerProduct"
+	bottom: "ip_6_1"
+	top: "ip_7_1"
+	inner_product_param {
+		num_output: 4096
+		bias_term: true
+	}
+}
+layer {
+	name: "drop_7_2_1"
+	type: "Dropout"
+	bottom: "ip_7_1"
+	top: "ip_7_1"
+	dropout_param {
+		dropout_ratio: 0.500000000000
+	}
+}
+layer {
+	name: "relu_7_3"
+	type: "ReLU"
+	bottom: "ip_7_1"
+	top: "ip_7_1"
+	relu_param {
+		negative_slope: 0.000000000000
+	}
+}
+layer {
+	name: "ip_8_1"
+	type: "InnerProduct"
+	bottom: "ip_7_1"
+	top: "ip_8_1"
+	inner_product_param {
+		num_output: 200
+		bias_term: true
+	}
+}
+layer {
+	name: "output_8_2"
+	type: "Softmax"
+	bottom: "ip_8_1"
+	top: "output_8_2"
+	}

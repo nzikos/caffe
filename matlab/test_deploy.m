@@ -1,13 +1,13 @@
+model          = 'best_model_uni_with_replacement.mat';
+model_filepath = fullfile(pwd,model);
 
-model = fullfile(pwd,'best_model_uni_with_replacement.mat');
-
-
-if ~exist(model)
+if ~exist(model_filepath,'file')
     APP_LOG('info','Downloading model');
-    websave('best_model_uni_with_replacement.mat','https://www.dropbox.com/s/pn9wghlg1gwmi75/best_model_uni_with_replacement.mat?dl=1',weboptions('Timeout',Inf));
+    websave('temp','https://www.dropbox.com/s/pn9wghlg1gwmi75/best_model_uni_with_replacement.mat?dl=1',weboptions('Timeout',Inf));
+    movefile('temp',model);
 end
 
-net = deployed_model3(model,-1);
+net = deployed_model3(model_filepath,-1);
 
 img = imread('printer.jpg');
 %img = imread('laptop.jpg');
